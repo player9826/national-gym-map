@@ -1,0 +1,79 @@
+name: Build Windows release draft
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - package.json
+      - package-lock.json
+      - '.github/workflows/release.yml'
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Validate version
+        id: version
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $tag = "v$version"
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne $tag) {
+            throw "Git tag must match package.json version: $tag"
+          }
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+      - run: npm ci
+      - run: npm test
+      - name: Build installer and update manifest
+        run: npm run dist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # electron-builder must not publish before review.
+          EP_DRAFT: 'true'
+      - name: Check required release assets
+        shell: pwsh
+        run: |
+          foreach ($asset in @('NationalGymMap-Setup.exe', 'NationalGymMap-Setup.exe.blockmap', 'latest.yml', 'checksums.txt')) {
+            if (-not (Test-Path -LiteralPath "release/$asset")) { throw "Missing release asset: $asset" }
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer-${{ steps.version.outputs.tag }}
+          path: |
+            release/NationalGymMap-Setup.exe
+            release/NationalGymMap-Setup.exe.blockmap
+            release/latest.yml
+            release/checksums.txt
+          if-no-files-found: error
+      - name: Create or update release draft
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          $existing = gh release view $env:RELEASE_TAG --json isDraft 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            if (-not ($existing | ConvertFrom-Json).isDraft) { throw 'Refusing to overwrite a published release.' }
+          } else {
+            gh release create $env:RELEASE_TAG --draft --target $env:GITHUB_SHA --title "全国健身房地图 $env:RELEASE_TAG" --generate-notes
+            if ($LASTEXITCODE -ne 0) { throw 'Could not create release draft.' }
+          }
+          gh release upload $env:RELEASE_TAG release/NationalGymMap-Setup.exe release/NationalGymMap-Setup.exe.blockmap release/latest.yml release/checksums.txt --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'Could not upload release assets.' }

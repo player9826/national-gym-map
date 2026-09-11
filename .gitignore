@@ -1,0 +1,32 @@
+node_modules/
+dist/
+release/
+test-results/
+*.log
+.build-tools/
+
+# Nested GitHub Desktop checkout is not part of this repository.
+/GYM MAP/
+
+# Local archives and private application data must never enter source control.
+/database/
+/gyms/
+/equipment/
+/imports/
+/exports/
+/backups/
+/metadata/
+/private/
+/shared-export/
+*.zip
+*.bak
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+location.json
+Thumbs.db
+Desktop.ini

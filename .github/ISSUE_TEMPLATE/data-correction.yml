@@ -1,0 +1,49 @@
+name: 场馆或器械资料修改建议
+description: 提交可公开核验的基础资料，由维护者审核后更新共享库。
+title: "[资料修改] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        这是公开讨论区。请勿提交个人到访记录、私人备注、原始测评文件、住址、联系方式或无权公开的照片。
+        图片请仅提交自己拍摄且可公开分享、已获许可或具有明确开放授权的内容，并注明来源。
+  - type: dropdown
+    id: category
+    attributes:
+      label: 修改类别
+      options:
+        - 场馆基础资料
+        - 器械基础资料
+        - 场馆与器械关联
+        - 图片或来源
+        - 其他
+    validations:
+      required: true
+  - type: input
+    id: record
+    attributes:
+      label: 场馆或器械名称
+      description: 如能获取记录标识，请一并提供；场馆请补充城市。
+    validations:
+      required: true
+  - type: textarea
+    id: changes
+    attributes:
+      label: 当前资料与建议修改
+      description: 请写清当前内容、建议的新内容及核实日期。
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 可公开核验的来源
+      description: 官网、公开地址或已获许可的图片；不要上传完整个人数据库或备份。
+    validations:
+      required: true
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: 公开提交确认
+      options:
+        - label: 我确认本建议不包含私人资料，所附图片具有公开分享权限。
+          required: true

@@ -1,0 +1,21 @@
+{
+  "fields": { "gymName": "示例健身房（非真实场馆）", "gymCity": "成都", "gymArea": "1500" },
+  "state": {
+    "areaIsTotal": false,
+    "cats": { "推胸": 4, "肩推": 2, "背下拉": 3 },
+    "muscles": { "胸": 4, "肩": 2, "背": 3 },
+    "muscleDetails": { "胸": { "上胸": 2, "平推": 2 } },
+    "smithCount": 2,
+    "sqRackCount": 3,
+    "benchCount": 2,
+    "adjBenchCount": 5,
+    "deadliftCount": 1,
+    "dumbbellMax": 60,
+    "cardio": { "跑步机": 8 },
+    "layout": "区域分明",
+    "transport": "地铁附近"
+  },
+  "lockerChecks": { "storage": true, "shower": true, "design": false, "restroom": true },
+  "source": "示例外部测评",
+  "version": "1.0"
+}
