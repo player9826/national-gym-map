@@ -1,0 +1,32 @@
+name: Publish approved 1.4.0 release
+
+# The maintainer explicitly approved this release and public catalog.
+# Future versions continue to require review of their release drafts.
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publish-approved-1.4.0.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish the approved draft with all required assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release view v1.4.0 --json isDraft,assets > release.json
+          python3 - <<'PY'
+          import json
+          release = json.load(open('release.json'))
+          required = {'NationalGymMap-Setup.exe', 'NationalGymMap-Setup.exe.blockmap', 'latest.yml', 'checksums.txt'}
+          assert required <= {a['name'] for a in release['assets']}, 'Missing release assets'
+          assert all(a['size'] > 0 for a in release['assets']), 'Empty release asset'
+          PY
+          gh release edit v1.4.0 --draft=false --latest
