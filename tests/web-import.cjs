@@ -18,10 +18,7 @@ async function main() {
     websites: [],
     temp,
   };
-  const image = Buffer.from(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWQAAAABJRU5ErkJggg==",
-    "base64",
-  );
+  const image = fs.readFileSync(path.resolve('build/icon.png'));
   const product = (name, imageUrl = "/image.png") =>
     `<html><head><title>${name}</title><meta property="og:image" content="${imageUrl}"></head><body><main><h1>${name}</h1><span class="sku">TEST-01</span></main></body></html>`;
   const server = http.createServer((req, res) => {
@@ -36,7 +33,7 @@ async function main() {
       return;
     }
     if (req.url === "/slow") return;
-    if (req.url === "/image.png") {
+    if (["/image.png", "/angle-two.png", "/angle-three.png"].includes(req.url)) {
       if (
         !req.headers.referer ||
         !req.headers.cookie?.includes("product=yes")
@@ -56,6 +53,18 @@ async function main() {
     }
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.setHeader("Set-Cookie", "product=yes; Path=/; SameSite=Lax");
+    if (req.url === '/three-images') {
+      res.end('<title>Gallery Press</title><main><h1>Gallery Press</h1><div class="product-gallery"><img src="/image.png"><img src="/angle-two.png"><img src="/angle-three.png"></div></main>');
+      return;
+    }
+    if (req.url === "/store/brand/series/") {
+      res.end('<title>Nitro Plus</title><div id="content"><a href="compound-row-s5cr/"><h3>Compound Row S5CR</h3><img data-src="/image.png"></a><a href="abdominal-s5ab/"><h3>Abdominal S5AB</h3></a><a href="weight-stack-pins/"><h3>Weight Stack Pins</h3></a></div>');
+      return;
+    }
+    if (req.url === "/store/brand/series/compound-row-s5cr/") {
+      res.end('<title>Compound Row S5CR | Parts supplier</title><script type="application/ld+json">{"@type":"Product","name":"Seat Pad","sku":"NA812","image":"/bad-image"}</script><div id="content"><h1>Compound Row S5CR</h1><div class="category-image" style="background-image:url(/image.png)"></div><div class="product-list"><a href="/pads/seat/"><h3>Seat Pad</h3><img src="/bad-image"></a><a href="/pads/bolt/"><h3>Hex Head Bolt</h3></a></div></div>');
+      return;
+    }
     if (req.url === "/blocked") {
       res.writeHead(403);
       res.end("<title>Attention Required! | Cloudflare</title>");
@@ -139,7 +148,8 @@ async function main() {
     const ordinary = await read("/product/press");
     assert.equal(ordinary.name, "Fixture Press");
     assert.equal(ordinary.model, "TEST-01");
-    assert.ok(ordinary.image);
+    assert.ok(ordinary.thumbnail);
+    assert.ok(!ordinary.image);
     assert.equal(ordinary.warning, "");
     check("ordinary product, model, image with cookie and referrer");
     const redirected = await read("/redirect-product");
@@ -147,11 +157,11 @@ async function main() {
     assert.match(redirected.productUrl, /\/product\/press$/);
     check("product redirect resolves final source");
     const redirectedImage = await read("/image-redirect-product");
-    assert.ok(redirectedImage.image, redirectedImage.warning);
+    assert.ok(redirectedImage.thumbnail, redirectedImage.warning);
     check("redirected image downloads");
     const dynamic = await read("/dynamic", "browser");
     assert.equal(dynamic.name, "Dynamic Press");
-    assert.ok(dynamic.image);
+    assert.ok(dynamic.thumbnail);
     check("browser executes delayed product content");
     const automatic = await read("/dynamic");
     assert.equal(automatic.name, "Dynamic Press");
@@ -162,8 +172,8 @@ async function main() {
     check("category produces product choices");
     const broken = await read("/broken");
     assert.equal(broken.name, "Broken Photo Press");
-    assert.equal(broken.image, "");
-    assert.match(broken.warning, /图片下载失败/);
+    assert.ok(!broken.image);
+    assert.match(broken.warning, /图片未能加载/);
     check("bad image preserves product text with warning");
     await assert.rejects(read("/blocked"), /验证|拒绝|403/);
     check("challenge cannot become product");
@@ -198,7 +208,7 @@ async function main() {
       }
     }
     assert.equal(assisted?.name, "Fixture Press");
-    assert.ok(assisted.image);
+    assert.ok(assisted.thumbnail);
     await call("browserClose");
     await assert.rejects(call("browserRead", { brandId }), /先打开/);
     check("assisted browser read and close");
@@ -210,6 +220,14 @@ async function main() {
     await call("browserClose");
     assert.match((await pending).error, /取消/);
     check("cancel interrupts pending read");
+    const nestedListing = await read("/store/brand/series/");
+    assert.equal(nestedListing.kind, "listing");
+    assert.deepEqual(nestedListing.products.map(p => p.name), ["Compound Row S5CR", "Abdominal S5AB"]);
+    const nestedMachine = await read("/store/brand/series/compound-row-s5cr/");
+    assert.equal(nestedMachine.name, "Compound Row S5CR");
+    assert.equal(nestedMachine.model, "S5CR");
+    assert.ok(nestedMachine.thumbnail, "machine background image downloads; replacement-part metadata must not override it");
+    check("nested parts supplier machine directory, accessory filtering, category image and related-product metadata isolation");
     const sites = [
       [
         "Panatta",
@@ -309,6 +327,50 @@ async function main() {
     );
     assert.equal((await call("state")).equipment.length, 0);
     check("preview never commits equipment");
+    const imageFiles = () => fs.existsSync(path.join(temp, 'data', 'equipment')) ? fs.readdirSync(path.join(temp, 'data', 'equipment')) : [];
+    assert.deepEqual(imageFiles(), []);
+    const gallery = await read('/three-images');
+    assert.equal(gallery.imageOptions.length, 3);
+    assert.deepEqual(imageFiles(), []);
+    assert.equal((await call('state')).equipment.length, 0);
+    const selected = gallery.imageOptions[2];
+    await assert.rejects(call('saveEquipment', {...gallery, name: '', equipmentType:'cardio', parts:[], tags:[], imageSource: selected.source}), /名称/);
+    assert.deepEqual(imageFiles(), [], 'failed save removes newly written image');
+    const saved = await call('saveEquipment', {...gallery, name:'Gallery Press', equipmentType:'cardio', parts:[], tags:[], imageSource: selected.source});
+    assert.equal(imageFiles().length, 1);
+    assert.equal(saved.imageSource, selected.source);
+    assert.ok(saved.image);
+    assert.equal(saved.pendingWebImage, undefined);
+    assert.equal(saved.imageOptions, undefined);
+    check('three selectable photos remain temporary; only selected image commits and failed save cleans up');
+    const captured = await call('capturePreview', {brandId, bundle:{format:'national-gym-map-capture', version:1, pages:[{
+      url:'https://offline-capture.invalid/product/press', html:product('Offline Capture Press', 'https://offline-capture.invalid/photo.png'),
+      images:[{source:'https://offline-capture.invalid/photo.png', dataUrl:`data:image/png;base64,${image.toString('base64')}`}]
+    }]}});
+    assert.ok(captured.thumbnail);
+    assert.equal(imageFiles().length, 1);
+    const captureBatch = await call('batchScan', {brandId, url:captured.productUrl, capture:captured});
+    assert.equal(captureBatch.candidates[0].detailFetched, true);
+    await call('batchUpdate', {id:captureBatch.id, candidateIds:[captureBatch.candidates[0].id], patch:{equipmentType:'cardio', parts:[], tags:[]}});
+    assert.equal(imageFiles().length, 1);
+    const summary = await call('batchPreview', {id:captureBatch.id});
+    await call('batchCommit', {id:captureBatch.id, token:summary.token});
+    assert.equal(imageFiles().length, 2, 'capture saves its original without visiting its deliberately nonexistent host');
+    const state = await call('state');
+    assert.equal(state.importBatches[0].candidates[0].thumbnail, undefined);
+    assert.equal(state.importBatches[0].candidates[0].imageOptions, undefined);
+    check('browser capture imports offline through batch confirmation; history contains no embedded previews');
+    await call('browserClose');
+    const retained = await call('productImage', {brandId, productUrl:captured.productUrl, imageSource:captured.imageSource});
+    assert.ok(retained.image, 'closing auxiliary browser must retain captured originals');
+    fs.unlinkSync(path.join(temp, 'data', retained.image));
+    const avif = require('@napi-rs/canvas').createCanvas(24,16).encodeSync('avif');
+    const avifCapture = await call('capturePreview', {brandId,bundle:{format:'national-gym-map-capture',version:1,pages:[{
+      url:'https://offline-capture.invalid/product/avif',html:'<h1>AVIF Test Press</h1>',images:[{source:'https://offline-capture.invalid/photo.avif',dataUrl:`data:image/avif;base64,${avif.toString('base64')}`}]
+    }]}});
+    assert.equal(avifCapture.imageOptions.length,1);
+    assert.ok(avifCapture.thumbnail.startsWith('data:image/jpeg;'));
+    check('captured originals survive auxiliary window close; AVIF candidates decode for preview');
     report.passed = true;
   } finally {
     fs.mkdirSync(path.dirname(output), { recursive: true });

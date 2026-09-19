@@ -134,6 +134,18 @@
   font-size: 12px;
   padding: 5px 8px;
 }
+.batch-workbench .batch-delete {
+  color: #a43c36;
+  background: #fff5f3;
+  border-color: #e9bbb5;
+}
+.batch-workbench .batch-delete:hover:not(:disabled) {
+  background: #fce7e3;
+  border-color: #cf8a80;
+}
+.batch-workbench .batch-delete:disabled {
+  opacity: 0.45;
+}
 .batch-status {
   display: inline-block;
   border-radius: 5px;

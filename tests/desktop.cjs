@@ -117,7 +117,7 @@ async function main() {
     await expect(page.locator(".gym-marker")).toHaveCount(1);
     await expect(page.locator(".gym-cover")).toBeVisible();
     await page
-      .locator(".detail-panel")
+      .locator(".gym-detail-modal")
       .getByRole("button", { name: "已去过", exact: true })
       .click();
     await expect(page.locator(".gym-marker")).toHaveClass(/visited/);
@@ -225,7 +225,7 @@ async function main() {
     await page.getByRole("button", { name: "编辑健身房", exact: true }).click();
     await page.getByLabel("PANATTA", { exact: true }).check();
     await page.getByRole("button", { name: "保存健身房", exact: true }).click();
-    await expect(page.locator(".detail-panel .brand-tags button")).toHaveCount(
+    await expect(page.locator(".gym-detail-modal .brand-tags button")).toHaveCount(
       1,
     );
     await page.getByRole("button", { name: "关联器械", exact: true }).click();

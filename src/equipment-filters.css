@@ -1,0 +1,11 @@
+.equipment-filters { width:100%; min-width:0; }
+.equipment-filter-fields { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.equipment-filter-fields input { flex:1 1 180px; min-width:120px; }
+.equipment-filter-fields select { max-width:220px; min-width:100px; }
+.equipment-secondary { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+.equipment-secondary button { min-width:58px; }
+.equipment-secondary button[aria-pressed="false"] { background:white; color:#334d45; }
+.equipment-secondary button.selected { background:#397c70; color:white; }
+.equipment-toolbar { flex-wrap:wrap; }
+.equipment-back-top { position:fixed; right:28px; bottom:26px; z-index:200; box-shadow:0 4px 14px #0002; }
+.linked-filter-results { margin:12px 0; color:var(--muted,#677572); }

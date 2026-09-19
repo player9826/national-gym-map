@@ -8,6 +8,7 @@ const { atomic, validate, TAGS } = require("./storage.cjs");
 const {
   normalizeClassification,
   validateClassification,
+  normalizeSeries,
 } = require("./equipment-model.cjs");
 const id = () => crypto.randomUUID();
 const text = (value) => (value == null ? "" : String(value).trim());
@@ -54,6 +55,7 @@ function equipment(input, { legacy = false, allowIncomplete = false } = {}) {
         ? input.tags
         : [input.applicationTag].filter(Boolean),
       model: text(input.model),
+      series: normalizeSeries(input.series),
       image: input.image || "",
       imageSource: text(input.imageSource),
       productUrl: text(input.productUrl),
@@ -71,6 +73,8 @@ function equipment(input, { legacy = false, allowIncomplete = false } = {}) {
     { legacy },
   );
   validateClassification(row, { allowIncomplete: legacy || allowIncomplete });
+  for (const field of ['thumbnail', 'imageOptions', 'imageCandidates', 'pendingWebImage', 'captured', 'kind', 'success', 'warning', 'url'])
+    delete row[field];
   return row;
 }
 function summarize(value) {
@@ -278,7 +282,7 @@ function prepareImport(store, { kind, raw }) {
   if (!Array.isArray(rows) || !rows.length)
     throw new Error("文件中没有可导入的记录数组。");
   if (rows.length > 5000) throw new Error("单次最多导入 5000 条记录。");
-  const brands = Array.isArray(raw.brands) ? raw.brands : [];
+  const brands = Array.isArray(raw.brands) ? structuredClone(raw.brands) : [];
   const normalized = rows.map((r) =>
     key === "gyms" ? gym(r) : equipment(r, { legacy: !r.equipmentType }),
   );
@@ -301,6 +305,12 @@ function prepareImport(store, { kind, raw }) {
       )
     : [];
   const warnings = [];
+  for (const brand of brands) {
+    if (brand.logo && !fs.existsSync(path.join(store.root, brand.logo))) {
+      warnings.push(`「${brand.name}」的品牌标识不在当前数据目录，将恢复内置标识或品牌名称。跨电脑转移图片请使用共享资料库或完整备份。`);
+      brand.logo = "";
+    }
+  }
   if (repeated) warnings.push(`${repeated} 条已有标识的记录将被更新。`);
   if (raw.links?.length > links.length)
     warnings.push(
@@ -428,6 +438,7 @@ async function fetchBytes(url, max = 20 * 1024 * 1024) {
 function parseProduct(html, url) {
   const $ = cheerio.load(html);
   let product;
+  const productNodes = [];
   const search = (value) => {
     if (!value || typeof value !== "object") return;
     if (
@@ -436,7 +447,7 @@ function parseProduct(html, url) {
         : [value["@type"]]
       ).includes("Product")
     )
-      product ||= value;
+      productNodes.push(value);
     for (const v of Object.values(value)) {
       if (Array.isArray(v)) v.forEach(search);
       else if (v && typeof v === "object") search(v);
@@ -447,20 +458,20 @@ function parseProduct(html, url) {
       search(JSON.parse($(el).text()));
     } catch {}
   });
+  const pageHeading = $("h1").first().text().trim() || $('meta[property="og:title"]').attr('content') || $("title").text().split(/\s*[|–]\s*/)[0].trim();
+  const normalized = value => String(value || '').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]/g, '');
+  product = productNodes.find(value => value.url && require('./page-extraction.cjs').publicUrl(value.url, url)?.replace(/\/$/,'') === url.replace(/\/$/,'')) || productNodes.find(value => normalized(pageHeading) && normalized(value.name) && (normalized(pageHeading).includes(normalized(value.name)) || normalized(value.name).includes(normalized(pageHeading))));
+  if (!product && !pageHeading && productNodes.length === 1) product = productNodes[0];
   const name =
     product?.name ||
     $('meta[property="og:title"]').attr("content") ||
     $("h1").first().text() ||
     $("title").text();
-  let image = Array.isArray(product?.image) ? product.image[0] : product?.image;
-  if (image && typeof image === "object") image = image.url || image.contentUrl;
-  image ||=
-    $('meta[property="og:image"]').attr("content") ||
-    $('meta[name="twitter:image"]').attr("content");
-  if (!image) image = $("main img, article img").first().attr("src");
+  const images = require('./page-extraction.cjs').imageCandidates($, url, name, product?.image);
   return {
     name: text(name).slice(0, 300),
-    imageSource: image ? new URL(image, url).toString() : "",
+    imageSource: images[0] || "",
+    imageCandidates: images,
     model: text(product?.model || product?.sku),
     detectedBrand: text(
       typeof product?.brand === "object" ? product.brand.name : product?.brand,
@@ -502,7 +513,7 @@ function imageExtension(bytes) {
 }
 function saveImage(store, bytes, category) {
   store.require();
-  if (!["gyms", "equipment"].includes(category))
+  if (!["gyms", "equipment", "brands"].includes(category))
     throw new Error("图片类别无效。");
   if (bytes.length > 20 * 1024 * 1024)
     throw new Error("单张图片最大 20 MB（Megabyte，兆字节）。");
@@ -523,5 +534,6 @@ module.exports = {
   fetchBytes,
   parseProduct,
   saveImage,
+  imageExtension,
   isPrivate,
 };

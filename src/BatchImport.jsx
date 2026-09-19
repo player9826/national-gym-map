@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Modal, Field } from "./components";
 import EquipmentClassification from "./EquipmentClassification";
-import { EQUIPMENT_TYPES, equipmentSummary } from "./constants";
+import { WebsiteImageChoices } from "./Forms";
+import { EQUIPMENT_TYPES, equipmentSummary, tagLabel } from "./constants";
 import "./batch-import.css";
 
 const STATES = {
@@ -22,7 +23,7 @@ const emptyClass = {
   loading: "",
 };
 
-function CandidateEditor({ candidate, disabled, onSave, onCancel }) {
+function CandidateEditor({ candidate, disabled, onSave, onCancel, knownParts = [], seriesOptions = [] }) {
   const [row, setRow] = useState({ ...candidate });
   return (
     <section className="batch-editor" aria-label="编辑候选器械">
@@ -54,12 +55,15 @@ function CandidateEditor({ candidate, disabled, onSave, onCancel }) {
               ))}
           </select>
         </Field>
-        <EquipmentClassification row={row} onChange={setRow} required={false} />
+        <EquipmentClassification row={row} onChange={setRow} required={false} knownParts={knownParts} />
         <Field label="候选系列">
           <input
             value={row.series || ""}
+            list="batch-series-suggestions"
+            maxLength={100}
             onChange={(e) => setRow({ ...row, series: e.target.value })}
           />
+          <datalist id="batch-series-suggestions">{seriesOptions.map(series => <option key={series} value={series} />)}</datalist>
         </Field>
         <Field label="图片来源地址">
           <input
@@ -67,6 +71,12 @@ function CandidateEditor({ candidate, disabled, onSave, onCancel }) {
             onChange={(e) => setRow({ ...row, imageSource: e.target.value })}
           />
         </Field>
+        <WebsiteImageChoices
+          options={row.imageOptions}
+          selected={row.imageSource || ""}
+          disabled={disabled}
+          onChange={(option) => setRow((current) => ({ ...current, imageSource: option?.source || "", thumbnail: option?.preview || "" }))}
+        />
         <Field label="候选备注" full>
           <textarea
             value={row.notes || ""}
@@ -108,16 +118,25 @@ export default function BatchImport({ db, onClose, onSaved }) {
     [assistedId, setAssistedId] = useState(null);
   const stopped = useRef(false),
     mounted = useRef(true),
-    working = useRef(false);
+    working = useRef(false),
+    activeBatch = useRef(null),
+    closeRequested = useRef(false);
   useEffect(() => {
+    mounted.current = true;
     call("batchList")
-      .then(setBatches)
-      .catch((e) => setError(e.message));
+      .then((rows) => { if (mounted.current) setBatches(rows); })
+      .catch((e) => { if (mounted.current) setError(e.message); });
     return () => {
       mounted.current = false;
       stopped.current = true;
+      if (activeBatch.current) call("batchDiscard", { id: activeBatch.current }).catch(() => {});
     };
   }, []);
+  async function discardCurrent() {
+    const id = activeBatch.current;
+    if (id) await call("batchDiscard", { id });
+    activeBatch.current = null;
+  }
   async function action(fn) {
     if (working.current) return;
     working.current = true;
@@ -131,23 +150,42 @@ export default function BatchImport({ db, onClose, onSaved }) {
     } finally {
       working.current = false;
       if (mounted.current) setBusy(false);
+      if (closeRequested.current && mounted.current) {
+        try {
+          await discardCurrent();
+          onClose();
+        } catch (e) {
+          closeRequested.current = false;
+          setError(e.message);
+        }
+      }
     }
   }
   function adopt(next) {
-    if (!mounted.current) return;
+    if (!mounted.current) {
+      call("batchDiscard", { id: next.id }).catch(() => {});
+      return;
+    }
+    activeBatch.current = next.id;
     setBatch(next);
     setConfirmation(null);
-    setBatches((old) => [next, ...old.filter((b) => b.id !== next.id)]);
+    if (!next.temporary) setBatches((old) => [next, ...old.filter((b) => b.id !== next.id)]);
   }
   function close() {
+    closeRequested.current = true;
+    stopped.current = true;
     if (working.current) {
-      stopped.current = true;
-      setNotice("正在完成当前读取，完成后即可关闭；候选已自动保存。");
-    } else onClose();
+      setNotice("正在结束当前操作，随后关闭并释放未确认的候选草稿。");
+    } else action(async () => {});
   }
-  async function scan(browser = false) {
+  async function scan(browser = false, capture = false) {
     await action(async () => {
-      const result = await call("batchScan", { brandId, url, browser });
+      await discardCurrent();
+      setBatch(null);
+      setConfirmation(null);
+      setAssistedId(null);
+      const result = await call(capture ? "batchCapture" : "batchScan", capture ? { brandId } : { brandId, url, browser });
+      if (!result) return;
       adopt(result);
       setSelected([]);
       setEditor(null);
@@ -163,7 +201,18 @@ export default function BatchImport({ db, onClose, onSaved }) {
         await call("batchUpdate", { id: batch.id, candidateIds: ids, patch }),
       );
       setEditor(null);
-      setNotice("候选修改已保存，尚未正式入库。");
+      setNotice("候选草稿已更新，确认导入后才会保存批次。");
+    });
+  }
+  async function removeCandidates(ids) {
+    const removable = ids.filter((id) => candidates.some((c) => c.id === id && c.status !== "imported"));
+    if (!removable.length) return;
+    await action(async () => {
+      adopt(await call("batchRemoveCandidates", { id: batch.id, candidateIds: removable }));
+      setSelected((old) => old.filter((id) => !removable.includes(id)));
+      setEditor((old) => removable.includes(old) ? null : old);
+      setAssistedId((old) => removable.includes(old) ? null : old);
+      setNotice(`已从候选中删除 ${removable.length} 项。已导入的器械不受影响。`);
     });
   }
   async function fetchRows(ids) {
@@ -177,7 +226,7 @@ export default function BatchImport({ db, onClose, onSaved }) {
       try {
         for (let i = 0; i < ids.length && !stopped.current; i++) {
           setNotice(
-            `正在读取详情 ${i + 1} / ${ids.length}，每项完成后自动保存。`,
+            `正在读取详情 ${i + 1} / ${ids.length}，完成后更新候选草稿。`,
           );
           adopt(
             await call("batchFetch", { id: batch.id, candidateId: ids[i] }),
@@ -217,9 +266,9 @@ export default function BatchImport({ db, onClose, onSaved }) {
       footer={
         <>
           <span className="batch-footer-note">
-            批次自动保存 · 正式入库前需确认
+            确认导入后保存批次 · 关闭释放未确认草稿
           </span>
-          <button disabled={busy} onClick={close}>
+          <button onClick={close}>
             关闭工作台
           </button>
           <button
@@ -240,7 +289,7 @@ export default function BatchImport({ db, onClose, onSaved }) {
     >
       <div className="batch-workbench">
         <p>
-          扫描目录后先整理候选，分类建议可以修改。暂缓和忽略会保留，下次扫描同一来源时沿用。
+          扫描结果是临时候选，可直接删除或批量删除不需要的项目。确认导入后才会保存批次；关闭工作台或重新扫描会释放未确认的草稿。
         </p>
         <div className="batch-source">
           <Field label="导入品牌">
@@ -274,6 +323,10 @@ export default function BatchImport({ db, onClose, onSaved }) {
           </button>
         </div>
         <div className="batch-actions">
+          <button disabled={busy || !brandId} onClick={() => scan(false, true)}>
+            导入浏览器采集文件
+          </button>
+          <button disabled={busy} onClick={() => action(() => call('captureHelp'))}>获取浏览器采集扩展</button>
           <button
             disabled={busy || !url.trim()}
             onClick={() => action(() => call("browserOpen", { url }))}
@@ -292,13 +345,17 @@ export default function BatchImport({ db, onClose, onSaved }) {
               onChange={(e) =>
                 e.target.value &&
                 action(async () => {
-                  adopt(await call("batchRead", { id: e.target.value }));
+                  const id = e.target.value;
+                  await discardCurrent();
+                  adopt(await call("batchRead", { id }));
                   setSelected([]);
                   setEditor(null);
+                  setAssistedId(null);
                 })
               }
             >
               <option value="">选择已保存批次</option>
+              {batch?.temporary && !batches.some((b) => b.id === batch.id) && <option value={batch.id}>当前未确认草稿</option>}
               {batches.map((b) => (
                 <option key={b.id} value={b.id}>
                   {db.brands.find((x) => x.id === b.brandId)?.name || "品牌"} ·{" "}
@@ -330,6 +387,13 @@ export default function BatchImport({ db, onClose, onSaved }) {
               ))}
             </div>
             <div className="batch-actions">
+              <button
+                className="batch-delete"
+                disabled={busy || !selectedIds.length}
+                onClick={() => removeCandidates(selectedIds)}
+              >
+                删除所选候选（{selectedIds.length}）
+              </button>
               <button
                 disabled={busy}
                 onClick={() =>
@@ -402,6 +466,7 @@ export default function BatchImport({ db, onClose, onSaved }) {
                   row={bulk}
                   onChange={setBulk}
                   required={false}
+                  knownParts={[...db.equipment, ...candidates].flatMap(item => item.parts ?? [item.part])}
                 />
               </div>
               <div className="batch-actions">
@@ -500,7 +565,7 @@ export default function BatchImport({ db, onClose, onSaved }) {
                       </td>
                       <td>
                         {equipmentSummary(c)}
-                        <small>{(c.tags || []).join(" / ")}</small>
+                        <small>{(c.tags || []).map(tagLabel).join(" / ")}</small>
                       </td>
                       <td>
                         <button
@@ -555,6 +620,14 @@ export default function BatchImport({ db, onClose, onSaved }) {
                       </td>
                       <td>
                         <div className="batch-row-actions">
+                          <button
+                            className="batch-delete"
+                            aria-label={`删除候选 ${c.name || "未命名"}`}
+                            disabled={busy || c.status === "imported"}
+                            onClick={() => removeCandidates([c.id])}
+                          >
+                            删除
+                          </button>
                           <button
                             disabled={busy || c.status === "imported"}
                             onClick={() => {
@@ -618,6 +691,8 @@ export default function BatchImport({ db, onClose, onSaved }) {
               <CandidateEditor
                 key={editor}
                 candidate={candidates.find((c) => c.id === editor)}
+                knownParts={[...db.equipment, ...candidates].flatMap(item => item.parts ?? [item.part])}
+                seriesOptions={[...new Set([...db.equipment, ...candidates].filter(item => item.brandId === batch.brandId).map(item => item.series?.trim()).filter(Boolean))]}
                 disabled={busy}
                 onCancel={() => setEditor(null)}
                 onSave={(row) =>
@@ -627,6 +702,7 @@ export default function BatchImport({ db, onClose, onSaved }) {
                     series: row.series,
                     notes: row.notes,
                     imageSource: row.imageSource,
+                    thumbnail: row.thumbnail,
                     equipmentType: row.equipmentType,
                     freeWeightType: row.freeWeightType,
                     parts: row.parts,

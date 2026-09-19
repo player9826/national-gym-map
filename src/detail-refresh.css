@@ -1,0 +1,151 @@
+/* Local detail and equipment presentation; gym colors never style app controls. */
+.gym-detail-modal.modal.wide {
+  width: 860px;
+  border: 3px solid var(--gym-accent, #397c70);
+}
+.gym-detail-modal .modal-content {
+  padding: 0;
+}
+.gym-detail-modal .detail-head {
+  position: static;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 24px;
+}
+.gym-detail-modal .detail-body {
+  padding: 24px;
+}
+.gym-detail-modal .gym-cover {
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+}
+.gym-detail-modal .linked-item {
+  align-items: center;
+  gap: 12px;
+}
+.linked-image {
+  flex: 0 0 86px;
+  width: 86px;
+  height: 76px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #f5f7f4;
+}
+.linked-image .picture,
+.linked-image .image-placeholder {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  min-height: 0;
+}
+.linked-image .image-placeholder span {
+  font-size: 10px;
+}
+.linked-image .image-placeholder svg {
+  width: 24px;
+  height: 24px;
+}
+.equipment-detail-image {
+  align-self: start;
+  border: 0;
+  padding: 0;
+  width: 100%;
+  background: transparent;
+}
+.equipment-detail-image .picture,
+.equipment-detail-image .image-placeholder {
+  width: 100%;
+  height: 300px;
+  object-fit: contain;
+}
+.equipment-page .equipment-type-tabs {
+  padding-inline: 32px;
+}
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  vertical-align: middle;
+}
+.brand-logo img {
+  display: block;
+  width: auto;
+  max-width: 112px;
+  height: 20px;
+  object-fit: contain;
+}
+.group-item .brand-logo img {
+  max-width: 112px;
+  height: 20px;
+}
+.equipment-card .brand-logo {
+  min-height: 20px;
+}
+.equipment-detail .brand-logo img {
+  height: 20px;
+  max-width: 112px;
+}
+.tags span[data-part],
+.part-filter-label[data-part] {
+  background: var(--part-bg);
+  color: var(--part-fg);
+  border: 1px solid var(--part-border);
+}
+[data-part="CHEST"] {
+  --part-bg: #fde9e8;
+  --part-fg: #903b3a;
+  --part-border: #eabcb9;
+}
+[data-part="SHOULDER"] {
+  --part-bg: #fff0d7;
+  --part-fg: #805211;
+  --part-border: #e8c68d;
+}
+[data-part="BACK"] {
+  --part-bg: #e5effb;
+  --part-fg: #315f91;
+  --part-border: #b5cce7;
+}
+[data-part="LEG"] {
+  --part-bg: #e4f2e8;
+  --part-fg: #326547;
+  --part-border: #b3d4bf;
+}
+[data-part="ARM"] {
+  --part-bg: #f0e8fa;
+  --part-fg: #70488d;
+  --part-border: #cdb8e0;
+}
+[data-part="ABDOMINAL"] {
+  --part-bg: #dff3f3;
+  --part-fg: #28686b;
+  --part-border: #abd4d6;
+}
+.part-filter-label {
+  border-radius: 6px;
+  padding: 3px 7px;
+}
+.part-tags {
+  margin-bottom: 5px;
+}
+@media (max-width: 700px) {
+  .equipment-page .equipment-type-tabs {
+    padding-inline: 16px;
+  }
+  .gym-detail-modal .detail-body {
+    padding: 16px;
+  }
+  .gym-detail-modal .gym-cover {
+    height: 180px;
+  }
+  .linked-image {
+    width: 64px;
+    flex-basis: 64px;
+    height: 64px;
+  }
+}
+
+.equipment-card .tags.part-tags { margin-bottom: 6px; }
+.brand-logo-fallback { font-size: 12px; line-height: 20px; }

@@ -1,0 +1,133 @@
+const { _electron: electron, expect } = require("@playwright/test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const { Store } = require("../electron/storage.cjs");
+
+(async () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "gym-image-choice-"));
+  const profile = path.join(temp, "profile");
+  const store = new Store(path.join(profile, "location.json"));
+  store.configure(path.join(temp, "data"));
+  const checks = [], errors = [];
+  const app = await electron.launch({ ...(process.env.GYM_INSTALLED_EXE ? {executablePath:process.env.GYM_INSTALLED_EXE,args:[]} : {args:["."]}), env: { ...process.env, GYM_TEST_PROFILE: profile } });
+  try {
+    const page = await app.firstWindow();
+    page.on("pageerror", error => errors.push(error.message));
+    await app.evaluate(({ app }) => {
+      const { handlers } = process.mainModule.require(process.mainModule.require("node:path").join(app.getAppPath(), "electron/main.cjs"));
+      const preview = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWQAAAABJRU5ErkJggg==";
+      const imageOptions = [1, 2, 3].map(i => ({ source: `https://example.com/image${i}.jpg`, preview }));
+      const product = { name: "候选图片测试器械", model: "TEST", productUrl: "https://example.com/product/one", imageOptions, imageSource: imageOptions[0].source, thumbnail: preview };
+      global.imageUiSaves = [];
+      global.imageUiPatches = [];
+      global.imageUiReads = 0;
+      handlers.productPreview = async () => { global.imageUiReads++; return structuredClone(product); };
+      handlers.captureOpen = () => ({ kind: "listing", captured: true, products: [
+        { ...product, captured: true, url: "https://example.com/captured/one", name: "采集产品一" },
+        { ...product, captured: true, url: "https://example.com/captured/two", name: "采集产品二" },
+      ] });
+      handlers.uploadImage = async () => "equipment/manual.png";
+      handlers.saveEquipment = async row => { global.imageUiSaves.push(row); return { ...row, id: "mock-saved" }; };
+      let batch = { id: "image-batch", temporary: true, brandId: "brand-1", candidates: [{ ...product, id: "candidate-one", status: "pending", equipmentType: "cardio", parts: [], tags: [] }] };
+      handlers.batchList = () => [];
+      handlers.batchScan = () => structuredClone(batch);
+      handlers.batchCapture = () => structuredClone(batch);
+      handlers.batchDiscard = () => true;
+      handlers.batchUpdate = ({ patch }) => {
+        global.imageUiPatches.push(patch);
+        batch.candidates[0] = { ...batch.candidates[0], ...patch };
+        return structuredClone(batch);
+      };
+    });
+    await page.getByRole("button", { name: "器械库", exact: true }).click();
+    const open = async (manualFirst = false, imageCount = 3) => {
+      await page.getByRole("button", { name: "官网导入", exact: true }).click();
+      const dialog = page.getByRole("dialog", { name: "官网导入器械", exact: true });
+      await dialog.getByLabel("品牌", { exact: false }).first().selectOption("brand-1");
+      if (manualFirst) await dialog.getByRole("button", { name: "添加照片", exact: true }).click();
+      await dialog.getByLabel("官方产品页或产品列表").fill("https://example.com/product/one");
+      await dialog.getByRole("button", { name: "读取产品", exact: true }).click();
+      await expect(dialog.getByRole("button", { name: /^选择网站图片 / })).toHaveCount(imageCount);
+      if (imageCount) await expect(dialog.getByRole("button", { name: "选择网站图片 1", exact: true })).toHaveAttribute("aria-pressed", "true");
+      await dialog.getByLabel("器械类型", { exact: true }).selectOption("cardio");
+      return dialog;
+    };
+    let dialog = await open(true);
+    await expect(dialog.locator(".photo-thumb img")).toHaveAttribute("src", "gymasset://local/equipment/manual.png");
+    await dialog.getByRole("button", { name: "选择网站图片 2", exact: true }).click();
+    await dialog.getByRole("button", { name: "保存器械", exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    let saves = await app.evaluate(() => global.imageUiSaves);
+    assert.equal(saves[0].image, "equipment/manual.png");
+    assert.equal(saves[0].imageSource, "https://example.com/image2.jpg");
+    assert.equal(saves[0].pendingWebImage, true);
+    assert.match(saves[0].thumbnail, /^data:image\//);
+    checks.push("three preview choices default first; choosing second preserves existing photo until save and passes pending download");
+    dialog = await open();
+    await dialog.getByRole("button", { name: "不使用网站图片", exact: true }).click();
+    await dialog.getByRole("button", { name: "保存器械", exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    dialog = await open();
+    await dialog.getByRole("button", { name: "添加照片", exact: true }).click();
+    await dialog.getByRole("button", { name: "保存器械", exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    saves = await app.evaluate(() => global.imageUiSaves);
+    assert.equal(saves[1].pendingWebImage, false);
+    assert.equal(saves[1].imageSource, "");
+    assert.equal(saves[2].pendingWebImage, false);
+    assert.equal(saves[2].image, "equipment/manual.png");
+    assert.equal(saves[2].thumbnail, "");
+    checks.push("skip website photo and manual upload both clear pending website image");
+    const reads = await app.evaluate(() => global.imageUiReads);
+    await page.getByRole("button", { name: "官网导入", exact: true }).click();
+    dialog = page.getByRole("dialog", { name: "官网导入器械", exact: true });
+    await dialog.getByLabel("品牌", { exact: false }).first().selectOption("brand-1");
+    await dialog.getByRole("button", { name: "导入浏览器采集文件", exact: true }).click();
+    await dialog.getByLabel("选择产品（2 款）").selectOption("https://example.com/captured/two");
+    await dialog.getByRole("button", { name: "读取所选产品", exact: true }).click();
+    await expect(dialog.getByLabel("器械名称", { exact: false })).toHaveValue("采集产品二");
+    await expect(dialog.getByRole("button", { name: /^选择网站图片 / })).toHaveCount(3);
+    assert.equal(await app.evaluate(() => global.imageUiReads), reads);
+    await dialog.getByRole("button", { name: "取消", exact: true }).click();
+    checks.push("captured listing selects full local product without re-fetching website");
+    await page.getByRole("button", { name: "批量网页导入", exact: true }).click();
+    const batch = page.getByRole("dialog", { name: "批量器械导入工作台", exact: true });
+    await batch.getByRole("button", { name: "导入浏览器采集文件", exact: true }).click();
+    await batch.getByRole("button", { name: "编辑", exact: true }).click();
+    await batch.getByRole("button", { name: "选择网站图片 3", exact: true }).click();
+    await batch.getByRole("button", { name: "保存候选修改", exact: true }).click();
+    await expect(batch.locator(".batch-editor")).toHaveCount(0);
+    let patches = await app.evaluate(() => global.imageUiPatches);
+    assert.equal(patches[0].imageSource, "https://example.com/image3.jpg");
+    assert.match(patches[0].thumbnail, /^data:image\//);
+    await batch.getByRole("button", { name: "编辑", exact: true }).click();
+    await batch.getByRole("button", { name: "不使用网站图片", exact: true }).click();
+    await batch.getByRole("button", { name: "保存候选修改", exact: true }).click();
+    await expect(batch.locator(".batch-editor")).toHaveCount(0);
+    patches = await app.evaluate(() => global.imageUiPatches);
+    assert.equal(patches[1].imageSource, "");
+    assert.equal(patches[1].thumbnail, "");
+    assert.equal((await page.evaluate(() => window.desktop.call("state"))).equipment.length, 0);
+    checks.push("batch candidate editor selects third thumbnail or skips without writing equipment");
+    await batch.getByRole('button', {name:'关闭工作台', exact:true}).click();
+    await app.evaluate(({app})=>{
+      const {handlers}=process.mainModule.require(process.mainModule.require('node:path').join(app.getAppPath(),'electron/main.cjs'));
+      handlers.productPreview=async()=>({name:'No Photo Press',imageOptions:[],imageSource:'https://example.com/failed.jpg',pendingWebImage:false,warning:'图片未能加载'});
+    });
+    dialog = await open(false, 0);
+    await expect(dialog.getByLabel('器械名称', {exact:false})).toHaveValue('No Photo Press');
+    await dialog.getByLabel('器械类型', {exact:false}).selectOption('cardio');
+    await dialog.getByRole('button', {name:'保存器械',exact:true}).click();
+    await expect(dialog).toHaveCount(0);
+    assert.equal((await app.evaluate(()=>global.imageUiSaves)).at(-1).pendingWebImage,false);
+    checks.push('failed website photos do not force a hidden pending image or block saving text');
+    assert.deepEqual(errors, []);
+  } finally {
+    await app.close();
+    fs.mkdirSync("test-results", { recursive: true });
+    fs.writeFileSync("test-results/website-image-ui.json", JSON.stringify({ checks, errors, temp, note: "Interface tests with mocked product and save handlers; network/download persistence tested separately." }, null, 2));
+  }
+  console.log(JSON.stringify({ checks, errors }));
+})().catch(error => { console.error(error); process.exitCode = 1; });

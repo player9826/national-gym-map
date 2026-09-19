@@ -15,7 +15,9 @@
 | 四类器械分类与旧字段迁移 | `electron/equipment-model.cjs` 后端规范化和校验；`src/constants.js` 界面分类常量 |
 | 文档单页导入 | `electron/pdf-import.cjs` 在独立工作线程解析、渲染；相关运行库及工作线程通过构建配置解包 |
 | 场馆、器械页面与筛选 | `src/App.jsx`、`src/constants.js` |
+| 1.5.2 共用器械搜索筛选 | `src/equipment-filtering.js` 统一匹配品牌、类型、部位、动作、系列、负重及搜索字段；`src/EquipmentFilters.jsx` 供器械库、选取窗口和场馆已关联列表使用 |
 | 场馆和器械编辑、品牌、设置 | `src/Forms.jsx` |
+| 自定义部位及品牌系列 | `src/EquipmentClassification.jsx` 编辑 `CUSTOM:名称` 部位；系列为器械的可空 `series`，候选由同品牌已保存器械推导；`electron/equipment-model.cjs` 校验，`electron/shared-catalog.cjs` 纳入公开资料同步 |
 | 看图多选批量关联 | `src/EquipmentPicker.jsx`、`electron/business.cjs`、`electron/catalog.cjs` |
 | 通用组件与样式 | `src/components.jsx`；按需查找 `src` 内样式文件 |
 | 数据校验、原子保存、迁移、备份恢复 | `electron/storage.cjs` |

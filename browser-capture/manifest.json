@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "健身房地图 · 浏览器采集",
+  "version": "1.0.0",
+  "description": "由你在已打开的官网页面启动，采集公开器械页面与图片，导出本地导入文件。",
+  "permissions": ["activeTab", "scripting", "downloads"],
+  "optional_host_permissions": ["https://*/*", "http://*/*"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html", "default_title": "采集当前官网" }
+}

@@ -1,0 +1,201 @@
+{
+  "Life Fitness": {
+    "path": "brand-logos/life-fitness.svg",
+    "page": "https://www.lifefitness.com/zh-cn",
+    "asset": "https://www.lifefitness.com/Kentico13CoreBase/media/LFMedia/Development-Images/lf-sm-black-brand-logo-new.svg",
+    "sha256": "0f31637bf14619858d560b5a9919c4cd752576efb593c2b58e16e10afc943127",
+    "checkedAt": "2026-09-12",
+    "status": "included"
+  },
+  "HOIST": {
+    "path": "brand-logos/hoist.png",
+    "page": "https://www.hoistfitness.com/",
+    "asset": "https://www.hoistfitness.com/cdn/shop/files/New_Hoist_Fitness_Logo_Classic_PNG_8daef698-8335-4ca4-a366-01130d0d3662.png?v=1687285002",
+    "sha256": "1b7bcdfbf5bc4d52930b9155cd43a44972ca67b8a0acb6eace9178ff798fd2ca",
+    "checkedAt": "2026-09-12",
+    "status": "included"
+  },
+  "Nautilus": {
+    "path": "brand-logos/nautilus.svg",
+    "page": "https://www.nautilus.com/",
+    "asset": "https://www.nautilus.com/cdn/shop/files/nautilus-logo.svg?v=1753519319&width=600",
+    "sha256": "988b70a296fe7e5b598cfdf1eafa9a74ee6999a06a3ab3ae5f16f013b1120c68",
+    "checkedAt": "2026-09-12",
+    "status": "included",
+    "background": "#1e293b"
+  },
+  "Precor": {
+    "path": "brand-logos/precor.svg",
+    "page": "https://www.precor.com/en-US",
+    "asset": "https://www.precor.com/_next/static/media/logo-white.00iz6wi8kloo5.svg",
+    "sha256": "e12b17e308f2618d3deef68fbd7768123132daa5847ac51b341e9cb11ddd19bd",
+    "checkedAt": "2026-09-12",
+    "status": "included",
+    "background": "#1e293b"
+  },
+  "Gym Leco": {
+    "path": "brand-logos/gym-leco.png",
+    "page": "https://gymleco.com/",
+    "asset": "https://gymleco.com/cdn/shop/files/gymleco_logo_horizontal_white.png?v=1727772084&width=300",
+    "sha256": "41ab095127b25ca7823e35dcb748f21d410c87fa464e8aa24f3d1c85ec75b958",
+    "checkedAt": "2026-09-12",
+    "status": "included",
+    "background": "#1e293b"
+  },
+  "GYM80": {
+    "path": "brand-logos/gym80.png",
+    "page": "https://gym80.de/en/",
+    "asset": "https://gym80.de/wp-content/uploads/2025/03/logo-512-black-s.png",
+    "sha256": "5f5b284a9f7b5580f83f2756c7c80f797c2f14266cddbdb465a187128c474221",
+    "checkedAt": "2026-09-12",
+    "status": "included"
+  },
+  "Arsenal": {
+    "path": "brand-logos/arsenal.png",
+    "page": "https://www.myarsenalstrength.com/",
+    "asset": "https://www.myarsenalstrength.com/hs-fs/hubfs/arsenal_newLogo_website.png?width=722&height=239&name=arsenal_newLogo_website.png",
+    "sha256": "de6e7a9d97a910ec2de377b4a702a4d00990f2d7a1fb0edd9fa9d93da80ba1c0",
+    "checkedAt": "2026-09-12",
+    "status": "included"
+  },
+  "STAR TRAC": {
+    "path": "brand-logos/star-trac.png",
+    "page": "https://www.corehandf.com/collections/star-trac/",
+    "asset": "https://www.corehandf.com/cdn/shop/files/logoasociate_startrac-3_small.png?v=13504583614104740835",
+    "sha256": "5beebd050048d13178ca27e4ca286344bd7f369f887775ac38dcc9946e5ad2d0",
+    "checkedAt": "2026-09-12",
+    "status": "included"
+  },
+  "KEISER": {
+    "path": "brand-logos/keiser.svg",
+    "page": "https://www.keiser.com/",
+    "asset": "https://d33g7cfs7ez3cd.cloudfront.net/websiteassets/images/keiser-logo-354e9b2d30.svg",
+    "sha256": "b34dc489df43491f29575130dd71faab1a56789c4031ce1802932cddf4ce85b0",
+    "checkedAt": "2026-09-12",
+    "status": "included"
+  },
+  "NEW TECH": {
+    "path": "brand-logos/new-tech.svg",
+    "page": "https://newtechworldwide.com/",
+    "asset": "https://newtechworldwide.com/cdn/shop/files/logo-svg.svg?v=1733953542&width=600",
+    "sha256": "bcddcd9533c5348b322901068a0c204c19158e4fb174a64171b572835d8b380e",
+    "checkedAt": "2026-09-12",
+    "status": "included"
+  },
+  "Max Pump": {
+    "path": "brand-logos/max-pump.png",
+    "page": "https://maxpumpsport.com/",
+    "asset": "https://maxpumpsport.com/wp-content/uploads/2026/05/header-1.png",
+    "sha256": "b71ee6fc123f766f82cd0b28e9a609cec8b4e9a40b284a6831524755887b3daf",
+    "checkedAt": "2026-09-12",
+    "status": "included"
+  },
+  "Booty Builder": {
+    "path": "brand-logos/booty-builder.svg",
+    "page": "https://bootybuilder.com/",
+    "asset": "https://bootybuilder.com/wp-content/uploads/2024/12/bb-white-bg.svg",
+    "sha256": "50808b3eed5e9c857816c165f99e1beb5b04f3e162de4ab88c34629b606d2a39",
+    "checkedAt": "2026-09-12",
+    "status": "included"
+  },
+  "Glute Builder": {
+    "path": "brand-logos/glute-builder.png",
+    "page": "https://glute-builder.com/",
+    "asset": "https://glute-builder.com/cdn/shop/files/logo-600x62.png?v=1750933635&width=600",
+    "sha256": "4ea1dd7f9e759d3d89c92b15728b43af46aad71336cf154960cc131555a67e4d",
+    "checkedAt": "2026-09-12",
+    "status": "included"
+  },
+  "HAMMER STRENGTH": {
+    "path": "brand-logos/hammer-strength.svg",
+    "page": "https://www.lifefitness.com/en-us/brands/hammer-strength",
+    "asset": "https://www.lifefitness.com/Kentico13CoreBase/media/LFMedia/Development-Images/hammer-label.svg",
+    "sha256": "5518616e6287c851bdd55371c2111e0347091426a46355d5554e4e32ef38af20",
+    "checkedAt": "2026-09-12",
+    "status": "included"
+  },
+  "Prime": {
+    "page": "https://www.primefitnessusa.com/",
+    "asset": "https://www.primefitnessusa.com/cdn/shop/files/PRIME_Icon_Outline_240x132.jpg?v=1626881335",
+    "sha256": "4572b0e414b3a34aebe539fc39d2ce8d9840b89e6f7a5c22551b0b415fe2b864",
+    "checkedAt": "2026-09-12",
+    "status": "name-fallback",
+    "reason": "Symbol-only asset withdrawn: a verified lettered wordmark is required."
+  },
+  "Atlantis": {
+    "page": "https://atlantisstrength.com/",
+    "asset": "inline .c-navigation__logo svg",
+    "sha256": "cf06431c6079cdbbff239e0591ed7d6095dbf67004ac7cd1da6d7b017af7b4d8",
+    "checkedAt": "2026-09-12",
+    "status": "name-fallback",
+    "background": "#1e293b",
+    "reason": "Symbol-only asset withdrawn: a verified lettered wordmark is required."
+  },
+  "PANATTA": {
+    "status": "unavailable",
+    "page": "https://www.panattasport.com/en/",
+    "reason": "No verified downloadable brand logo found; use brand name fallback."
+  },
+  "Free Motion": {
+    "path": "brand-logos/freemotion.svg",
+    "page": "https://www.freemotionfitness.com/media-resources/",
+    "asset": "https://images.contentstack.io/v3/assets/blt57f09fe1af8ef70f/bltee7cda1e1beaccad/6a181d6afaa913140193ceb1/freemotion-wordmark-black.svg",
+    "sha256": "07bc2bf0a7eb70113a55dd95f0e8d4bebb4e03f5b69cbb4cc9cd6de9b75de077",
+    "checkedAt": "2026-09-12",
+    "status": "included"
+  },
+  "Rosen": {
+    "status": "unavailable",
+    "page": "https://www.rosensport.com/",
+    "reason": "No verified downloadable brand logo found; use brand name fallback."
+  },
+  "炁研力量": {
+    "status": "unavailable",
+    "page": null,
+    "reason": "No verified downloadable brand logo found; use brand name fallback."
+  },
+  "DIVINE POWER": {
+    "status": "unavailable",
+    "page": null,
+    "reason": "No verified downloadable brand logo found; use brand name fallback."
+  },
+  "FORWARD": {
+    "status": "unavailable",
+    "page": "https://www.fwdkorea.com/",
+    "reason": "No verified downloadable brand logo found; use brand name fallback."
+  },
+  "MATRIX": {
+    "path": "brand-logos/matrix.svg",
+    "page": "https://parts.matrixfitness.com/privacy",
+    "asset": "https://parts.matrixfitness.com/inc/images/logos/Matrixfitness.svg",
+    "sha256": "58feaf73ea6a194e65605a6858245bcf7d822c06d634437f911e40f45174f8aa",
+    "checkedAt": "2026-09-12",
+    "status": "included",
+    "background": "#1e293b"
+  },
+  "Cybex": {
+    "status": "unavailable",
+    "page": "https://www.lifefitness.com/en-us/brands/cybex-fitness-equipment",
+    "reason": "No verified downloadable brand logo found; use brand name fallback."
+  },
+  "FLEX": {
+    "status": "unavailable",
+    "page": null,
+    "reason": "No verified downloadable brand logo found; use brand name fallback."
+  },
+  "Paramount": {
+    "status": "unavailable",
+    "page": null,
+    "reason": "No verified downloadable brand logo found; use brand name fallback."
+  },
+  "TechnoGym": {
+    "status": "unavailable",
+    "page": "https://www.technogym.com/en-US/",
+    "reason": "No verified downloadable brand logo found; use brand name fallback."
+  },
+  "BODYMASTER": {
+    "status": "unavailable",
+    "page": null,
+    "reason": "No verified downloadable brand logo found; use brand name fallback."
+  }
+}

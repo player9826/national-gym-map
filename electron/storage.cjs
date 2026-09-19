@@ -122,12 +122,12 @@ function validate(db) {
           if (!["https:", "http:"].includes(u.protocol))
             throw new Error("网址必须以 https:// 或 http:// 开头。");
         }
-      for (const value of [row.image, row.cover, ...(row.photos || [])].filter(
+      for (const value of [row.image, row.cover, row.logo, ...(row.photos || [])].filter(
         Boolean,
       ))
         if (
           typeof value !== "string" ||
-          !/^(equipment|gyms)\/[a-zA-Z0-9_.-]+$/.test(value)
+          !/^(equipment|gyms|brands)\/[a-zA-Z0-9_.-]+$/.test(value)
         )
           throw new Error("本地图片路径无效。");
     }

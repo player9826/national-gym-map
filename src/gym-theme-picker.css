@@ -1,0 +1,43 @@
+.gym-theme-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.gym-theme-picker .gym-theme-swatch {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  background: var(--swatch-color);
+  color: white;
+  justify-content: center;
+}
+.gym-theme-picker .gym-theme-swatch:hover {
+  background: var(--swatch-color);
+}
+.gym-theme-picker .gym-theme-swatch[aria-pressed="true"] {
+  outline: 2px solid #263b3c;
+  outline-offset: 3px;
+}
+.gym-theme-picker .gym-theme-swatch:focus-visible {
+  outline: 3px solid #263b3c;
+  outline-offset: 3px;
+}
+.gym-theme-custom,
+.gym-theme-custom label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.gym-theme-custom input[type="color"] {
+  width: 44px;
+  height: 34px;
+  padding: 3px;
+  cursor: pointer;
+}
+.gym-theme-value {
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}

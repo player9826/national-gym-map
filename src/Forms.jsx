@@ -31,9 +31,12 @@ import {
   partName,
   equipmentType,
   equipmentSummary,
+  PART_TAGS,
 } from "./constants";
 import EquipmentClassification from "./EquipmentClassification";
 import SharedCatalogSettings from "./SharedCatalogSettings";
+import BrandLogo from "./BrandLogo";
+import GymThemePicker from "./GymThemePicker";
 
 export function GymForm({
   initial,
@@ -90,6 +93,10 @@ export function GymForm({
             onChange={set("name")}
           />
         </Field>
+        <GymThemePicker
+          value={row.themeColor}
+          onChange={(themeColor) => setRow((current) => ({ ...current, themeColor }))}
+        />
         <Field label="省份">
           <input value={row.province} onChange={set("province")} />
         </Field>
@@ -262,6 +269,28 @@ export function GymForm({
     </Modal>
   );
 }
+export function WebsiteImageChoices({ options = [], selected = "", disabled = false, onChange }) {
+  const choices = options.filter((option) => option.source && /^data:image\//.test(option.preview || "")).slice(0, 3);
+  if (!choices.length) return null;
+  return (
+    <section className="website-image-choices field full" aria-label="网站候选图片">
+      <strong>选择网站封面图片</strong>
+      <div className="website-image-options">
+        {choices.map((option, index) => (
+          <button type="button" key={option.source} disabled={disabled}
+            aria-label={`选择网站图片 ${index + 1}`} aria-pressed={selected === option.source}
+            onClick={() => onChange(option)}>
+            <img src={option.preview} alt={`网站候选图片 ${index + 1}`} onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} />
+            <span>{selected === option.source ? "已选封面" : `图片 ${index + 1}`}</span>
+          </button>
+        ))}
+      </div>
+      <button type="button" className="website-image-skip" disabled={disabled} aria-pressed={!selected} onClick={() => onChange(null)}>不使用网站图片</button>
+      <small>这里只预览候选图片；保存器械或确认批量导入时，才保存所选图片。不使用网站图片会保留已有照片。</small>
+    </section>
+  );
+}
+
 export function EquipmentForm({
   initial,
   brands,
@@ -269,6 +298,7 @@ export function EquipmentForm({
   onClose,
   run,
   official = false,
+  equipment = [],
 }) {
   const [row, setRow] = useState(() => ({
       ...initial,
@@ -293,6 +323,7 @@ export function EquipmentForm({
       request.current += 1;
       if (official) {
         window.desktop.call("browserClose").catch(() => {});
+        window.desktop.call("captureDiscard").catch(() => {});
         window.desktop.call("pdfCancel").catch(() => {});
       }
     };
@@ -300,7 +331,7 @@ export function EquipmentForm({
   function accept(result) {
     if (!result) return;
     if (result.kind === "listing") {
-      setProducts(result.products || []);
+      setProducts((result.products || []).map((product) => result.captured ? { ...product, captured: true } : product));
       setSelectedProduct(result.products?.[0]?.url || "");
       setWarning(
         result.warning || "已识别产品列表，请选择一款器械后读取详情。",
@@ -308,9 +339,17 @@ export function EquipmentForm({
       return;
     }
     const { warning: resultWarning, kind, ...data } = result;
+    const website = Array.isArray(result.imageOptions);
     setRow((current) => ({
       ...current,
       ...data,
+      ...(website ? {
+        image: current.image,
+        imageOptions: result.imageOptions.slice(0, 3),
+        imageSource: result.imageSource || result.imageOptions[0]?.source || "",
+        thumbnail: result.thumbnail || result.imageOptions[0]?.preview || "",
+        pendingWebImage: !!result.imageOptions[0]?.preview && result.pendingWebImage !== false,
+      } : { imageOptions: [], thumbnail: "", pendingWebImage: false }),
       id: current.id,
       brandId: current.brandId,
       equipmentType: current.equipmentType,
@@ -377,7 +416,7 @@ export function EquipmentForm({
           if (busy) return;
           if (
             row.equipmentType === "fixed" &&
-            (!(row.parts?.length || row.part) || !row.tags?.length)
+            (!(row.parts?.length || row.part) || ((row.parts ?? [row.part]).some(part => PART_TAGS[part]) && !row.tags?.length))
           ) {
             setImportError("固定器械请至少选择一个部位及对应应用标签。");
             return;
@@ -387,7 +426,7 @@ export function EquipmentForm({
         }}
       >
         <Field label="品牌" required full>
-          <select required value={row.brandId} onChange={set("brandId")}>
+          <select required value={row.brandId} onChange={(event) => setRow({ ...row, brandId: event.target.value, series: "" })}>
             <option value="">选择品牌</option>
             {brands.map((b) => (
               <option value={b.id} key={b.id}>
@@ -407,6 +446,19 @@ export function EquipmentForm({
               />
             </Field>
             <div className="actions">
+              <button
+                type="button"
+                disabled={busy || !row.brandId}
+                onClick={() => importAction(async () => {
+                  const result = await window.desktop.call("captureOpen", { brandId: row.brandId });
+                  return () => accept(result);
+                })}
+              >
+                导入浏览器采集文件
+              </button>
+              <button type="button" disabled={busy} onClick={() => importAction(async () => { await window.desktop.call('captureHelp'); })}>
+                获取浏览器采集扩展
+              </button>
               <button
                 type="button"
                 disabled={busy || !url.trim()}
@@ -492,6 +544,11 @@ export function EquipmentForm({
                   type="button"
                   disabled={busy || !selectedProduct}
                   onClick={() => {
+                    const product = products.find((item) => item.url === selectedProduct);
+                    if (product?.captured) {
+                      accept(product);
+                      return;
+                    }
                     setUrl(selectedProduct);
                     readProduct("auto", selectedProduct);
                   }}
@@ -587,7 +644,7 @@ export function EquipmentForm({
             onChange={set("name")}
           />
         </Field>
-        <EquipmentClassification row={row} onChange={setRow} />
+        <EquipmentClassification row={row} onChange={setRow} knownParts={equipment.flatMap(item => item.parts ?? [item.part])} />
         {!official && importError && (
           <p className="inline-error full" role="alert">
             {importError}
@@ -596,15 +653,30 @@ export function EquipmentForm({
         <Field label="型号">
           <input value={row.model || ""} onChange={set("model")} />
         </Field>
+        <Field label="系列（可留空）">
+          <input list="equipment-series-suggestions" value={row.series || ""} onChange={set("series")} maxLength={100} placeholder="选择已有系列或填写新系列" />
+          <datalist id="equipment-series-suggestions">{[...new Set(equipment.filter(item => item.brandId === row.brandId).map(item => item.series?.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "zh-CN")).map(series => <option value={series} key={series} />)}</datalist>
+        </Field>
         <div className="field full">
           <span>器械照片</span>
           <PhotoInput
             value={row.image}
-            onChange={(image) => setRow({ ...row, image, imageSource: "" })}
+            onChange={(image) => setRow({ ...row, image, imageSource: "", thumbnail: "", pendingWebImage: false })}
             category="equipment"
             run={run}
           />
         </div>
+        <WebsiteImageChoices
+          options={row.imageOptions}
+          selected={row.pendingWebImage ? row.imageSource : ""}
+          disabled={busy}
+          onChange={(option) => setRow((current) => ({
+            ...current,
+            imageSource: option?.source || (current.image === initial.image ? initial.imageSource || "" : ""),
+            thumbnail: option?.preview || "",
+            pendingWebImage: !!option,
+          }))}
+        />
         <Field label="官网产品页" full>
           <input
             type="url"
@@ -654,7 +726,7 @@ export function BrandManager({
                 key={b.id}
               >
                 <button className="brand-select" onClick={() => setRow(b)}>
-                  <strong>{b.name}</strong>
+                  <BrandLogo brand={b} />
                   <small>
                     {equipment.filter((e) => e.brandId === b.id).length} 台器械
                   </small>
@@ -708,6 +780,12 @@ export function BrandManager({
               onChange={(e) => setRow({ ...row, name: e.target.value })}
             />
           </Field>
+          <div className="field" role="group" aria-label="品牌标识"><span>品牌标识</span>
+            <BrandLogo brand={row} />
+            <PhotoInput value={row.logo || ""} category="brands" run={run}
+              onChange={(logo) => setRow((current) => ({ ...current, logo }))} />
+            <small>上传后替换内置标识；移除上传图片后恢复内置标识，没有图片时显示品牌名称。</small>
+          </div>
           <Field label="官网地址">
             <input
               type="url"

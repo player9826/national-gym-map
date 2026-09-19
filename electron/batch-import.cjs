@@ -1,10 +1,13 @@
 const crypto = require("node:crypto");
+const fs = require("node:fs");
+const path = require("node:path");
 const catalog = require("./catalog.cjs");
 const { suggest } = require("./equipment-rules.cjs");
 const { validateFields, validateImportBatches } = require("./batch-model.cjs");
 const {
   normalizeClassification,
   validateClassification,
+  normalizeSeries,
 } = require("./equipment-model.cjs");
 const STATES = [
   "pending",
@@ -69,25 +72,40 @@ function counts(batch) {
   return result;
 }
 function createBatchImporter(store, web) {
-  const tokens = new Map();
-  const get = (id) => {
+  const tokens = new Map(), drafts = new Map(), fetches = new Map(), committing = new Set();
+  let sessionRoot = store.root;
+  function checkSession() {
     store.require();
-    const b = (store.db.importBatches || []).find((b) => b.id === id);
-    if (!b) throw new Error("批次不存在。");
+    if (sessionRoot !== store.root) {
+      drafts.clear(); tokens.clear(); fetches.clear();
+      sessionRoot = store.root;
+    }
+  }
+  const get = (id) => {
+    checkSession();
+    let b = drafts.get(id);
+    if (!b) {
+      b = (store.db.importBatches || []).find((b) => b.id === id);
+      if (!b) throw new Error("批次不存在。");
+      b = { ...structuredClone(b), temporary: true };
+      drafts.set(id, b);
+    }
     return structuredClone(b);
   };
   function save(batch) {
+    checkSession();
+    for (const row of batch.candidates) if (Object.hasOwn(row, "series")) row.series = normalizeSeries(row.series);
     batch.updatedAt = now();
     batch.counts = counts(batch);
-    const next = structuredClone(store.db);
-    next.importBatches ||= [];
-    const index = next.importBatches.findIndex((b) => b.id === batch.id);
-    if (index < 0) next.importBatches.push(batch);
-    else next.importBatches[index] = batch;
-    validateImportBatches(next.importBatches);
-    store.save(next);
+    batch.temporary = true;
+    validateImportBatches([batch]);
+    drafts.set(batch.id, structuredClone(batch));
     tokens.delete(batch.id);
     return batch;
+  }
+  function cancelFetches(id, candidateIds) {
+    for (const [key, request] of fetches)
+      if (request.id === id && (!candidateIds || candidateIds.includes(request.candidateId))) fetches.delete(key);
   }
   function refresh(row, db = store.db) {
     row.duplicate = duplicate(row, db.equipment);
@@ -211,19 +229,36 @@ function createBatchImporter(store, web) {
   }
   return {
     batchList: () => {
-      store.require();
+      checkSession();
       return structuredClone(store.db.importBatches || []).sort((a, b) =>
         b.updatedAt.localeCompare(a.updatedAt),
       );
     },
     batchRead: ({ id }) => get(id),
+    batchDiscard: ({ id }) => {
+      checkSession(); drafts.delete(id); tokens.delete(id); cancelFetches(id);
+      web.captureDiscard?.();
+      return true;
+    },
+    batchRemoveCandidates: ({ id, candidateIds }) => {
+      const batch = get(id);
+      if (!Array.isArray(candidateIds) || !candidateIds.length || candidateIds.some(value => typeof value !== "string"))
+        throw new Error("请选择要删除的候选。");
+      if (candidateIds.some(candidateId => !batch.candidates.some(row => row.id === candidateId))) throw new Error("候选不存在。");
+      if (batch.candidates.some(row => candidateIds.includes(row.id) && row.status === "imported")) throw new Error("已导入项目不可删除。");
+      batch.candidates = batch.candidates.filter(row => !candidateIds.includes(row.id));
+      cancelFetches(id, candidateIds);
+      return save(batch);
+    },
     batchScan: async ({
       brandId,
       url,
       sourceType = "official_web",
       browser = false,
+      capture = null,
     }) => {
-      store.require();
+      checkSession();
+      const scanRoot = store.root;
       if (!store.db.brands.some((b) => b.id === brandId))
         throw new Error("请先选择品牌。");
       const batch = {
@@ -236,7 +271,9 @@ function createBatchImporter(store, web) {
         status: "scanned",
         candidates: [],
       };
-      const result = await web.productMetadata({ url, brandId, browser });
+      const result = capture || await web.productMetadata({ url, brandId, browser });
+      checkSession();
+      if (scanRoot !== store.root) throw new Error("数据目录已变化，请重新扫描。");
       if (result.success === false) {
         batch.status = "failed";
         batch.error = result;
@@ -274,6 +311,8 @@ function createBatchImporter(store, web) {
             name: p.name || "",
             model: p.model || "",
             imageSource: p.imageSource || "",
+            ...(p.thumbnail ? {thumbnail: p.thumbnail} : {}),
+            ...(p.imageOptions ? {imageOptions: p.imageOptions} : {}),
             productUrl: p.url,
             sourceUrl: p.url,
             sourceDate: now(),
@@ -282,7 +321,7 @@ function createBatchImporter(store, web) {
             officialCategory: p.officialCategory || "",
             ...suggest(p),
             status: "pending",
-            detailFetched: result.kind !== "listing",
+            detailFetched: !!p.captured || result.kind !== "listing",
             decision: "",
             createdAt: now(),
             updatedAt: now(),
@@ -309,13 +348,21 @@ function createBatchImporter(store, web) {
       if (!row) throw new Error("候选不存在。");
       if (row.status === "imported")
         throw new Error("已导入项目不能重复读取。");
+      const requestKey = `${id}:${candidateId}`;
+      const request = { id, candidateId, root: store.root };
+      fetches.set(requestKey, request);
+      tokens.delete(id);
       const result = await web.productMetadata({
         url: row.sourceUrl,
         brandId: batch.brandId,
         browser,
       });
+      checkSession();
+      if (request.root !== store.root || fetches.get(requestKey) !== request || !drafts.has(id)) throw new Error("候选读取已取消。");
+      fetches.delete(requestKey);
       batch = get(id);
       row = batch.candidates.find((r) => r.id === candidateId);
+      if (!row || row.status === "imported") throw new Error("候选已删除或已导入。");
       if (result.success === false || result.kind === "listing") {
         row.error =
           result.success === false
@@ -339,6 +386,7 @@ function createBatchImporter(store, web) {
           "series",
           "officialCategory",
           "thumbnail",
+          "imageOptions",
         ])
           if (result[field]) row[field] = result[field];
         if (result.productUrl) row.productUrl = result.productUrl;
@@ -372,6 +420,7 @@ function createBatchImporter(store, web) {
         "tags",
         "loading",
         "imageSource",
+        "thumbnail",
         "sourceUrl",
         "productUrl",
         "sourceDate",
@@ -455,18 +504,23 @@ function createBatchImporter(store, web) {
       };
     },
     batchCommit: async ({ id, token }) => {
+      checkSession();
       const entry = tokens.get(id);
       if (
+        committing.has(id) ||
         !entry ||
         entry.token !== token ||
         entry.fingerprint !== JSON.stringify(store.db)
       )
         throw new Error("预览已过期，请重新确认导入摘要。");
-      tokens.delete(id);
       if (entry.prepared.issues.length)
         throw new Error("请先解决候选分类或重复处理问题。");
+      committing.add(id);
+      const imageRoot = store.root, createdImages = new Set();
+      let saved = false;
+      try {
       const batch = get(id),
-        { operations, summary } = entry.prepared;
+        { operations, summary } = structuredClone(entry.prepared);
       const imageResults = new Map();
       summary.imageFailures = 0;
       for (const operation of operations) {
@@ -479,6 +533,7 @@ function createBatchImporter(store, web) {
           try {
             const result = await web.productImage(operation.record);
             operation.record.image = result.image || "";
+            if (result.image) createdImages.add(result.image);
             operation.record.imageStatus = result.image ? "ready" : "failed";
             if (result.warning) operation.record.imageWarning = result.warning;
           } catch (error) {
@@ -494,7 +549,8 @@ function createBatchImporter(store, web) {
           });
         }
       }
-      if (entry.fingerprint !== JSON.stringify(store.db))
+      checkSession();
+      if (tokens.get(id) !== entry || entry.fingerprint !== JSON.stringify(store.db))
         throw new Error("数据已变化，请重新预览，尚未导入器械。");
       const next = structuredClone(store.db);
       const committed = new Map();
@@ -534,10 +590,24 @@ function createBatchImporter(store, web) {
       batch.updatedAt = now();
       batch.counts = counts(batch);
       batch.lastSummary = summary;
-      next.importBatches[next.importBatches.findIndex((b) => b.id === id)] =
-        batch;
+      delete batch.temporary;
+      // Preview thumbnails are temporary; history retains source URLs only.
+      for (const row of batch.candidates) {
+        delete row.thumbnail;
+        delete row.imageOptions;
+      }
+      next.importBatches ||= [];
+      const index = next.importBatches.findIndex((b) => b.id === id);
+      if (index < 0) next.importBatches.push(batch); else next.importBatches[index] = batch;
       store.save(next);
-      return { batch, summary };
+      saved = true;
+      drafts.delete(id); tokens.delete(id); cancelFetches(id);
+      return { batch: { ...batch, temporary: false }, summary };
+      } finally {
+        if (!saved) for (const image of createdImages)
+          fs.rmSync(path.join(imageRoot, image), {force: true});
+        committing.delete(id);
+      }
     },
   };
 }

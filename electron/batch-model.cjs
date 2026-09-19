@@ -1,3 +1,4 @@
+const { normalizeSeries, normalizePart, isCustomPart } = require("./equipment-model.cjs");
 const STATES = [
   "pending",
   "imported",
@@ -25,6 +26,8 @@ const STRING_FIELDS = [
   "decision",
 ];
 function validateFields(row) {
+  if (row.series !== undefined) normalizeSeries(row.series);
+  if (Array.isArray(row.parts) && (row.parts.length > 20 || row.parts.some(part => typeof part === "string" && part.startsWith("CUSTOM:") && !isCustomPart(normalizePart(part))))) throw new Error("候选部位字段无效。");
   for (const field of STRING_FIELDS) {
     if (row[field] === undefined) continue;
     if (typeof row[field] !== "string" || row[field].length > 20000)
@@ -98,7 +101,7 @@ function validateImportBatches(batches) {
       candidateIds.add(row.id);
       validateFields(row);
       if (
-        row.thumbnail !== undefined &&
+        row.thumbnail !== undefined && row.thumbnail !== "" &&
         (typeof row.thumbnail !== "string" ||
           row.thumbnail.length > 150000 ||
           !/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(row.thumbnail))

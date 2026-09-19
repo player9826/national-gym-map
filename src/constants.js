@@ -23,6 +23,8 @@ export const TAGS = [
   "三头",
   "腿弯举",
   "脊柱伸",
+  "小臂",
+  "小腿",
 ];
 export const EQUIPMENT_TYPES = [
   ["fixed", "固定器械"],
@@ -40,8 +42,8 @@ export const PART_TAGS = {
   CHEST: ["推胸", "夹胸"],
   SHOULDER: ["肩推", "中后束"],
   BACK: ["背下拉", "背后拉"],
-  LEG: ["近固蹬", "远固蹬", "髋伸", "髋旋", "腿屈伸", "腿弯举"],
-  ARM: ["二头", "三头"],
+  LEG: ["近固蹬", "远固蹬", "髋伸", "髋旋", "腿屈伸", "腿弯举", "小腿"],
+  ARM: ["二头", "三头", "小臂"],
   ABDOMINAL: ["脊柱屈", "脊柱伸"],
 };
 export const equipmentType = (row) =>
@@ -63,10 +65,12 @@ export const equipmentSummary = (row) => {
     ].join(" · ");
   return name;
 };
+export const tagLabel = (tag) => tag === "肩推" ? "推肩" : tag;
+export const isCustomPart = (part) => typeof part === "string" && part.startsWith("CUSTOM:") && !!part.slice(7).trim();
 export const partName = (key) =>
   Array.isArray(key)
     ? key.map(partName).join(" / ")
-    : PARTS.find((p) => p[0] === key)?.[1] || key;
+    : isCustomPart(key) ? key.slice(7) : PARTS.find((p) => p[0] === key)?.[1] || key;
 export const asset = (rel) => (rel ? `gymasset://local/${rel}` : "");
 export const CITIES = [
   ["北京", 39.9042, 116.4074],

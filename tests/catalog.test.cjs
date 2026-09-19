@@ -12,6 +12,34 @@ function fixture(t) {
   store.configure(path.join(base, "data"));
   return store;
 }
+test('brand logo upload validates bytes and paths and survives full backup restore', async t => {
+  const store = fixture(t);
+  const png = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 1]);
+  const logo = c.saveImage(store, png, 'brands');
+  const brand = c.upsert(store, 'brands', { name: 'Logo brand', logo });
+  assert.match(logo, /^brands\/.+\.png$/);
+  assert.throws(() => c.saveImage(store, Buffer.from('<svg/>'), 'brands'), /格式/);
+  assert.throws(() => c.upsert(store, 'brands', { ...brand, logo: '../private.png' }), /路径/);
+  const backup = await store.backup();
+  c.upsert(store, 'brands', { ...brand, logo: '' });
+  fs.rmSync(path.join(store.root, logo));
+  await store.restore(backup.path);
+  assert.equal(store.db.brands.find(b => b.id === brand.id).logo, logo);
+  assert.deepEqual(fs.readFileSync(path.join(store.root, logo)), png);
+});
+test('structured import drops unavailable brand logos without changing the input', t => {
+  const store = fixture(t);
+  const raw = {
+    brands: [{ id: 'import-brand', name: 'Imported brand', logo: 'brands/missing.png' }],
+    equipment: [{ id: 'import-equipment', name: 'Bike', brandId: 'import-brand', equipmentType: 'cardio', parts: [], tags: [] }],
+  };
+  const draft = c.prepareImport(store, { kind: 'equipment', raw });
+  assert.equal(draft.brands[0].logo, '');
+  assert.equal(raw.brands[0].logo, 'brands/missing.png');
+  assert.ok(draft.warnings.some(message => message.includes('品牌标识')));
+  c.commitImport(store, draft);
+  assert.equal(store.db.brands.find(b => b.id === 'import-brand').logo, '');
+});
 test("multiple parts and loading types persist; legacy single part remains supported", (t) => {
   const s = fixture(t);
   const e = c.upsert(s, "equipment", {

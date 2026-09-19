@@ -27,6 +27,50 @@ function fixture(t) {
   const preview = () => api.sharedPreview({ url: 'https://example.test/repo/manifest.json' });
   return { publisher, subscriber, destination, publish, api, preview };
 }
+test('custom parts and series share with alias normalization and protect local series edits', async t => {
+  const {publisher,subscriber,publish,preview,api,destination}=fixture(t);
+  const {upsert}=require('../electron/catalog.cjs');
+  upsert(publisher,'equipment',{...publisher.db.equipment[0],equipmentType:'fixed',parts:['CUSTOM: 颈部 '],tags:[],series:' Alpha '});
+  publish();const publicData=JSON.parse(fs.readFileSync(path.join(destination,'catalog.json')));
+  assert.equal(publicData.equipment[0].series,'Alpha');
+  let p=await preview();await api.sharedApply({token:p.token});let local=subscriber.db.equipment[0];
+  assert.deepEqual(local.parts,['CUSTOM:颈部']);assert.equal(local.series,'Alpha');
+  upsert(subscriber,'equipment',{...local,series:'Personal'});
+  upsert(publisher,'equipment',{...publisher.db.equipment[0],series:'Beta'});publish();
+  p=await preview();assert.ok(p.conflicts.some(c=>c.field==='series'));await api.sharedApply({token:p.token});
+  assert.equal(subscriber.db.equipment[0].series,'Personal');
+  const {checkCatalog}=require('../electron/shared-catalog.cjs');
+  publicData.equipment[0].parts=['SHOULDER'];publicData.equipment[0].tags=['推肩'];
+  assert.deepEqual(checkCatalog(publicData).equipment[0].tags,['肩推']);
+});
+test('brand logos share, cache, update and preserve a subscriber replacement', async t => {
+  const { publisher, subscriber, destination, publish, api, preview } = fixture(t);
+  const { saveImage, upsert } = require('../electron/catalog.cjs');
+  const png = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 1]);
+  const first = saveImage(publisher, png, 'brands');
+  upsert(publisher, 'brands', { ...publisher.db.brands[0], logo: first });
+  publish();
+  let draft = await preview();
+  await api.sharedApply({ token: draft.token });
+  const local = subscriber.db.brands.find(b => b.name === publisher.db.brands[0].name);
+  assert.match(local.logo, /^brands\/shared-/);
+  assert.deepEqual(fs.readFileSync(path.join(subscriber.root, local.logo)), png);
+  assert.equal((await preview()).downloadImages, 0);
+  const replacement = saveImage(publisher, Buffer.concat([png, Buffer.from('new')]), 'brands');
+  upsert(publisher, 'brands', { ...publisher.db.brands[0], logo: replacement });
+  publish(); draft = await preview(); await api.sharedApply({ token: draft.token });
+  assert.notEqual(subscriber.db.brands.find(b => b.id === local.id).logo, local.logo);
+  const personal = saveImage(subscriber, Buffer.concat([png, Buffer.from('local')]), 'brands');
+  upsert(subscriber, 'brands', { ...subscriber.db.brands.find(b => b.id === local.id), logo: personal });
+  upsert(publisher, 'brands', { ...publisher.db.brands[0], logo: first });
+  publish(); draft = await preview();
+  assert.ok(draft.conflicts.some(c => c.field === 'logo'));
+  await api.sharedApply({ token: draft.token });
+  assert.equal(subscriber.db.brands.find(b => b.id === local.id).logo, personal);
+  exportShared(publisher, { destination, includeImages: false });
+  assert.equal(JSON.parse(fs.readFileSync(path.join(destination, 'catalog.json'))).brands[0].logo, undefined);
+  assert.ok(!fs.existsSync(path.join(destination, 'images', first)));
+});
 test('public export omits personal fields and only packages referenced images', t => {
   const { destination, publisher } = fixture(t);
   const text = fs.readFileSync(path.join(destination, 'catalog.json'), 'utf8');

@@ -17,6 +17,13 @@ function createHandlers(store, getWindow) {
     return r.canceled ? null : r.filePaths[0];
   };
   const web = require("./web-import.cjs").createWebImporter(store, getWindow);
+  const batch = require("./batch-import.cjs").createBatchImporter(store, web);
+  const captureOpen = async ({brandId}) => {
+    const file = await pick('选择浏览器采集文件', [{name:'浏览器采集文件', extensions:['json']}]);
+    if (!file) return null;
+    if (fs.statSync(file).size > 64 * 1024 ** 2) throw new Error('采集文件过大，请分批导入。');
+    return web.capturePreview({brandId, bundle: JSON.parse(fs.readFileSync(file, 'utf8'))});
+  };
   return {
     ...shared.createSharedCatalog(store, publicRelease.fetchPublicBytes),
     sharedStatus: () => ({ url: store.db?.settings?.sharedCatalogUrl || publicRelease.DEFAULT_SHARED_URL, defaultUrl: publicRelease.DEFAULT_SHARED_URL, issuesUrl: `${publicRelease.PUBLIC_REPOSITORY}/issues/new/choose`, lastSyncedAt: store.db?.settings?.sharedLastSyncedAt || null }),
@@ -28,10 +35,40 @@ function createHandlers(store, getWindow) {
       return shared.exportShared(store,{destination:result.filePaths[0],includeImages});
     },
     ...web,
-    ...require("./batch-import.cjs").createBatchImporter(store, web),
+    ...batch,
+    captureOpen,
+    captureHelp: async () => {
+      const folder = app.isPackaged ? path.join(process.resourcesPath, 'browser-capture') : path.join(app.getAppPath(), 'browser-capture');
+      const error = await shell.openPath(folder);
+      if (error) throw new Error(error);
+      return true;
+    },
+    batchCapture: async ({brandId}) => {
+      const capture = await captureOpen({brandId});
+      if (!capture) return null;
+      return batch.batchScan({brandId, url: capture.productUrl || capture.products[0].url, capture});
+    },
     ...require("./pdf-import.cjs").createPdfImporter(store, getWindow),
     saveGym: (row) => catalog.upsert(store, "gyms", row),
-    saveEquipment: (row) => catalog.upsert(store, "equipment", row),
+    saveEquipment: async (row) => {
+      const root = store.root;
+      const fingerprint = JSON.stringify(store.db);
+      let created = "";
+      try {
+        if (row.pendingWebImage && row.imageSource) {
+          const result = await web.productImage(row);
+          created = result.image || "";
+          if (!created) throw new Error(result.warning || "图片保存失败，请重试或取消选择网站图片。");
+          row = {...row, image: created};
+        }
+        if (store.root !== root || JSON.stringify(store.db) !== fingerprint)
+          throw new Error("数据已变化，请重新保存。");
+        return catalog.upsert(store, "equipment", row);
+      } catch (error) {
+        if (created) fs.rmSync(path.join(root, created), {force: true});
+        throw error;
+      }
+    },
     saveBrand: (row) => catalog.upsert(store, "brands", row),
     delete: (input) => catalog.remove(store, input),
     link: (input) => catalog.link(store, input),

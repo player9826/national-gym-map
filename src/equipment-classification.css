@@ -4,6 +4,10 @@
   flex-wrap: wrap;
   margin: 0 0 18px;
 }
+.custom-part-entry { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.custom-part-entry input { max-width: 260px; }
+.custom-part-entry small { width: 100%; }
+[data-part="OTHER"], [data-part^="CUSTOM:"] { --part-bg: #eee7f5; --part-fg: #654578; --part-border: #d9c9e7; }
 .equipment-type-tabs button {
   display: flex;
   align-items: center;

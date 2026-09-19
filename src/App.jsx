@@ -25,14 +25,19 @@ import {
   FolderOpen,
 } from "lucide-react";
 import MapView from "./MapView";
-import GymPreview, { useGymPreview } from "./GymPreview";
+import GymPreview, { useGymPreview, gymAccent } from "./GymPreview";
+import BrandLogo from "./BrandLogo";
+import "./detail-refresh.css";
 import EquipmentPicker from "./EquipmentPicker";
+import EquipmentFilters from "./EquipmentFilters";
+import {matchesEquipment, partOptions} from "./equipment-filtering";
 import BatchImport from "./BatchImport";
 import "./equipment-classification.css";
 import {
   IconButton,
   Modal,
   Tags,
+  PartTags,
   Picture,
   Status,
   Empty,
@@ -87,7 +92,14 @@ export default function App() {
     [eqQuery, setEqQuery] = useState(""),
     [eqTag, setEqTag] = useState(""),
     [eqLoading, setEqLoading] = useState(""),
-    [eqSort, setEqSort] = useState("name");
+    [eqSort, setEqSort] = useState("name"),
+    [eqSeries, setEqSeries] = useState(""),
+    [eqField, setEqField] = useState("all"),
+    [linkedFilters, setLinkedFilters] = useState({}),
+    [backTop, setBackTop] = useState(false);
+  const equipmentScroll = useRef(null);
+  useEffect(() => { setLinkedFilters({}); }, [selected]);
+  useEffect(() => { setBackTop(false); }, [page]);
   const running = useRef(false),
     notification = useRef();
   function notice(message) {
@@ -136,7 +148,14 @@ export default function App() {
   const gym = db.gyms.find((g) => g.id === selected),
     eq = db.equipment.find((e) => e.id === equipmentId);
   const hover = useGymPreview(
-    page !== "map" || !!modal || !!confirm || !!error || busy || !!pickDraft,
+    page !== "map" ||
+      !!gym ||
+      !!eq ||
+      !!modal ||
+      !!confirm ||
+      !!error ||
+      busy ||
+      !!pickDraft,
   );
   const visibleGyms = useMemo(
     () =>
@@ -160,42 +179,15 @@ export default function App() {
         ),
     [db.gyms, query, city, visitFilter, tag, sort],
   );
-  const equipment = useMemo(
-    () =>
-      db.equipment
-        .filter(
-          (e) =>
-            (!eqType || equipmentType(e) === eqType) &&
-            (!eqFreeType || e.freeWeightType === eqFreeType) &&
-            (!eqApplication || e.tags?.includes(eqApplication)) &&
-            (!eqGroup ||
-              (eqMode === "brand"
-                ? e.brandId === eqGroup
-                : (e.parts ?? [e.part]).includes(eqGroup))) &&
-            `${e.name} ${e.model} ${db.brands.find((b) => b.id === e.brandId)?.name}`
-              .toLowerCase()
-              .includes(eqQuery.toLowerCase()) &&
-            (!eqTag || (e.parts ?? [e.part]).includes(eqTag)) &&
-            (!eqLoading || e.loading === eqLoading),
-        )
-        .sort((a, b) =>
-          eqSort === "updated"
-            ? (b.updatedAt || "").localeCompare(a.updatedAt || "")
-            : a.name.localeCompare(b.name, "zh-CN"),
-        ),
-    [
-      db,
-      eqGroup,
-      eqMode,
-      eqQuery,
-      eqTag,
-      eqLoading,
-      eqSort,
-      eqType,
-      eqFreeType,
-      eqApplication,
-    ],
-  );
+  const eqFilters = {type:eqType, freeType:eqFreeType, brand:eqGroup, part:eqTag, application:eqApplication, loading:eqLoading, series:eqSeries, field:eqField, query:eqQuery};
+  function changeEqFilters(next) {
+    setEqType(next.type || ''); setEqFreeType(next.freeType || '');
+    setEqGroup(next.brand || ''); setEqTag(next.part || '');
+    setEqApplication(next.application || ''); setEqLoading(next.loading || '');
+    setEqSeries(next.series || ''); setEqField(next.field || 'all'); setEqQuery(next.query || '');
+  }
+  const equipment = db.equipment.filter(e => matchesEquipment(e, eqFilters, db.brands)).sort((a,b) => eqSort === 'updated' ? (b.updatedAt || '').localeCompare(a.updatedAt || '') : a.name.localeCompare(b.name,'zh-CN'));
+  const brandEquipment = db.equipment.filter(e => !eqGroup || e.brandId === eqGroup);
   const previewGym = visibleGyms.find((g) => g.id === hover.preview?.id);
   const equipmentCounts = useMemo(() => {
     const counts = new globalThis.Map();
@@ -214,27 +206,11 @@ export default function App() {
     ]),
   ].sort((a, b) => a.localeCompare(b, "zh-CN"));
   const gymTags = [...new Set(db.gyms.flatMap((g) => g.tags || []))];
-  function showGym(id, clear = false) {
+  function showGym(id) {
     hover.close();
-    const target = db.gyms.find((g) => g.id === id);
-    if (!target) return;
-    setPage("map");
+    if (!db.gyms.some((g) => g.id === id)) return;
     setEquipmentId(null);
     setSelected(id);
-    if (clear) {
-      setQuery("");
-      setCity("");
-      setVisitFilter("all");
-      setTag("");
-    }
-    if (target.lat != null)
-      setFocus({
-        lat: target.lat,
-        lng: target.lng,
-        label: target.city || target.name,
-        token: Date.now(),
-      });
-    else notice("此健身房尚未设置地图位置，可在编辑中地图选点。");
   }
   function chooseCity(value) {
     setCity(value);
@@ -246,13 +222,14 @@ export default function App() {
       setFocus({ lat: 35.4, lng: 104.2, zoom: 4, label: "全国视野" });
   }
   async function save(method, row) {
+    const previousGym = method === "saveGym" ? db.gyms.find(g => g.id === row.id) : null;
     const saved = await window.desktop.call(method, row);
     await refresh();
     setModal(null);
     notice("已保存");
     if (method === "saveGym") {
       setSelected(saved.id);
-      if (saved.lat != null)
+      if (saved.lat != null && (!previousGym || previousGym.lat !== saved.lat || previousGym.lng !== saved.lng))
         setFocus({
           lat: saved.lat,
           lng: saved.lng,
@@ -298,12 +275,14 @@ export default function App() {
               <button
                 key={id}
                 onClick={() => {
+                  setSelected(null);
                   setPage("equipment");
                   setEqType("");
                   setEqFreeType("");
                   setEqApplication("");
                   setEqMode("brand");
                   setEqGroup(id);
+                  setEqSeries("");
                   setEqTag("");
                   setEqLoading("");
                   setEqQuery("");
@@ -666,212 +645,6 @@ export default function App() {
             取消选点
           </button>
         )}
-        {gym && !pickDraft && (
-          <aside className="detail-panel" aria-label="健身房详情">
-            <div className="detail-head">
-              <span>场馆档案</span>
-              <div className="actions">
-                <IconButton
-                  icon={Pencil}
-                  label="编辑健身房"
-                  onClick={() => setModal({ type: "gym", row: gym })}
-                />
-                <IconButton
-                  icon={Trash2}
-                  label="删除健身房"
-                  onClick={() => remove("gyms", gym)}
-                />
-                <IconButton
-                  icon={X}
-                  label="关闭健身房详情"
-                  onClick={() => setSelected(null)}
-                />
-              </div>
-            </div>
-            {gym.cover && (
-              <Picture
-                src={gym.cover}
-                alt={gym.name}
-                type="gym"
-                className="gym-cover"
-              />
-            )}
-            <div className="detail-body">
-              <span className="eyebrow">
-                {[gym.province, gym.city, gym.district]
-                  .filter(Boolean)
-                  .join(" / ") || "位置待补充"}
-              </span>
-              <h2>{gym.name}</h2>
-              <Status
-                visited={gym.visited}
-                disabled={busy}
-                onChange={(visited) => run(() => changeVisit(gym, visited))}
-              />
-              {gym.visitDate && (
-                <p className="muted">到访日期 · {gym.visitDate}</p>
-              )}
-              <p className="address">
-                <MapPin size={16} />
-                {gym.address || "地址待补充"}
-              </p>
-              {gym.lat == null && (
-                <button
-                  className="text-button"
-                  onClick={() => {
-                    setPickDraft(gym);
-                    setSelected(null);
-                  }}
-                >
-                  补充地图位置
-                  <ArrowUpRight size={15} />
-                </button>
-              )}
-              <Tags values={gym.tags} />
-              {brandTags(gym)}
-              <p className="description">{gym.description || "暂无简介"}</p>
-              {gym.photos?.length > 0 && (
-                <div className="gallery">
-                  {gym.photos.map((p, i) => (
-                    <button
-                      key={p}
-                      title={`查看照片 ${i + 1}`}
-                      onClick={() =>
-                        setModal({ type: "photo", src: p, name: gym.name })
-                      }
-                    >
-                      <img src={asset(p)} alt={`${gym.name} 照片 ${i + 1}`} />
-                    </button>
-                  ))}
-                </div>
-              )}
-              <section className="detail-section">
-                <div className="section-label">
-                  <h3>测评档案</h3>
-                  <button
-                    className="text-button"
-                    onClick={() => importFile("review")}
-                  >
-                    <Upload size={14} />
-                    导入测评
-                  </button>
-                </div>
-                <div className="review-score">
-                  <strong>{gym.score ?? "待补充"}</strong>
-                  <span>{gym.reviewSource || "外部测评评分"}</span>
-                </div>
-                {gym.reviewUrl ? (
-                  <button
-                    className="outline full-width"
-                    onClick={() =>
-                      run(() => window.desktop.call("external", gym.reviewUrl))
-                    }
-                  >
-                    查看详细测评
-                    <ExternalLink size={15} />
-                  </button>
-                ) : (
-                  <p className="muted">尚未添加测评链接</p>
-                )}
-                {gym.area != null && (
-                  <p>
-                    面积 · {String(gym.area)} · {gym.areaType || "未说明"}
-                  </p>
-                )}
-                {gym.reviewSummary?.length > 0 && (
-                  <details>
-                    <summary>测评摘要</summary>
-                    <dl className="summary-table">
-                      {gym.reviewSummary.map((s) => (
-                        <React.Fragment key={s.label}>
-                          <dt>{s.label}</dt>
-                          <dd>{s.value || "未提供"}</dd>
-                        </React.Fragment>
-                      ))}
-                    </dl>
-                  </details>
-                )}
-                {gym.reviewVersion && (
-                  <p className="muted">测评版本 · {gym.reviewVersion}</p>
-                )}
-                {gym.reviewDate && (
-                  <p className="muted">测评时间 · {gym.reviewDate}</p>
-                )}
-                {gym.reviewImportedAt && (
-                  <p className="muted">
-                    导入时间 ·{" "}
-                    {new Date(gym.reviewImportedAt).toLocaleString("zh-CN")}
-                  </p>
-                )}
-                {gym.rawReview && (
-                  <details>
-                    <summary>原始测评</summary>
-                    <pre>{JSON.stringify(gym.rawReview, null, 2)}</pre>
-                    <button
-                      className="text-button"
-                      onClick={() =>
-                        run(async () => {
-                          const file = await window.desktop.call(
-                            "exportReview",
-                            gym.id,
-                          );
-                          if (file) notice(`已导出原始测评\n${file}`);
-                        })
-                      }
-                    >
-                      <Download size={15} />
-                      导出原始测评
-                    </button>
-                  </details>
-                )}
-              </section>
-              <section className="detail-section">
-                <div className="section-label">
-                  <h3>
-                    关联器械 <span>{linked.length}</span>
-                  </h3>
-                  <IconButton
-                    icon={Plus}
-                    label="关联器械"
-                    onClick={() => setModal({ type: "link", gym })}
-                  />
-                </div>
-                {!linked.length && <p className="muted">暂无关联器械</p>}
-                {linked.map((l) => {
-                  const e = db.equipment.find((e) => e.id === l.equipmentId);
-                  return (
-                    <div className="linked-item" key={l.id}>
-                      <button
-                        className="linked-open"
-                        onClick={() => {
-                          setPage("equipment");
-                          setEquipmentId(e.id);
-                        }}
-                      >
-                        <strong>{e.name}</strong>
-                        <small>
-                          {db.brands.find((b) => b.id === e.brandId)?.name} ·{" "}
-                          {l.quantity} 台 · {l.status}
-                        </small>
-                        {l.notes && <small>{l.notes}</small>}
-                      </button>
-                      <IconButton
-                        icon={X}
-                        label={`解除关联 ${e.name}`}
-                        onClick={() =>
-                          ask(`解除「${e.name}」的关联？`, async () => {
-                            await window.desktop.call("unlink", l.id);
-                            await refresh();
-                          })
-                        }
-                      />
-                    </div>
-                  );
-                })}
-              </section>
-            </div>
-          </aside>
-        )}
       </main>
       {page === "equipment" && (
         <main className="equipment-page">
@@ -894,7 +667,7 @@ export default function App() {
                   requireData(() =>
                     setModal({
                       type: "equipment",
-                      row: emptyEquipment(eqMode === "brand" ? eqGroup : ""),
+                      row: emptyEquipment(eqGroup),
                       official: true,
                     }),
                   )
@@ -917,7 +690,7 @@ export default function App() {
                   requireData(() =>
                     setModal({
                       type: "equipment",
-                      row: emptyEquipment(eqMode === "brand" ? eqGroup : ""),
+                      row: emptyEquipment(eqGroup),
                     }),
                   )
                 }
@@ -938,9 +711,8 @@ export default function App() {
                   setEqApplication("");
                   setEqTag("");
                   setEqLoading("");
-                  if (type !== "fixed" && eqMode === "part") {
+                  if (type && type !== "fixed" && eqMode === "part") {
                     setEqMode("brand");
-                    setEqGroup("");
                   }
                 }}
               >
@@ -948,7 +720,7 @@ export default function App() {
                 <span>
                   {
                     db.equipment.filter(
-                      (e) => !type || equipmentType(e) === type,
+                      (e) => (!eqGroup || e.brandId === eqGroup) && (!type || equipmentType(e) === type),
                     ).length
                   }
                 </span>
@@ -962,7 +734,6 @@ export default function App() {
                   className={eqMode === "brand" ? "selected" : ""}
                   onClick={() => {
                     setEqMode("brand");
-                    setEqGroup("");
                   }}
                 >
                   按品牌
@@ -972,7 +743,6 @@ export default function App() {
                     className={eqMode === "part" ? "selected" : ""}
                     onClick={() => {
                       setEqMode("part");
-                      setEqGroup("");
                     }}
                   >
                     按部位
@@ -980,23 +750,29 @@ export default function App() {
                 )}
               </div>
               <button
-                className={`group-item ${!eqGroup ? "selected" : ""}`}
-                onClick={() => setEqGroup("")}
+                className={`group-item ${!(eqMode === "brand" ? eqGroup : eqTag) ? "selected" : ""}`}
+                onClick={() => eqMode === "brand" ? (setEqGroup(""), setEqSeries("")) : (setEqTag(""), setEqApplication(""))}
               >
                 <span>全部器械</span>
-                <span>{db.equipment.length}</span>
+                <span>{eqMode === "brand" ? db.equipment.length : brandEquipment.length}</span>
               </button>
               <div className="group-list">
                 {(eqMode === "brand"
                   ? db.brands.map((b) => [b.id, b.name])
-                  : PARTS
+                  : partOptions(db.equipment)
                 ).map(([id, name]) => (
                   <button
-                    className={`group-item ${eqGroup === id ? "selected" : ""}`}
+                    className={`group-item ${(eqMode === "brand" ? eqGroup : eqTag) === id ? "selected" : ""}`}
                     key={id}
-                    onClick={() => setEqGroup(id)}
+                    onClick={() => eqMode === "brand" ? (setEqGroup(id), setEqSeries("")) : (setEqTag(id), setEqApplication(""))}
                   >
-                    <span>{name}</span>
+                    {eqMode === "brand" ? (
+                      <BrandLogo brand={db.brands.find((b) => b.id === id)} />
+                    ) : (
+                      <span className="part-filter-label" data-part={id}>
+                        {name}
+                      </span>
+                    )}
                     <span>
                       {
                         db.equipment.filter(
@@ -1004,7 +780,7 @@ export default function App() {
                             (!eqType || equipmentType(e) === eqType) &&
                             (eqMode === "brand"
                               ? e.brandId === id
-                              : (e.parts ?? [e.part]).includes(id)),
+                              : (!eqGroup || e.brandId === eqGroup) && (e.parts ?? [e.part]).includes(id)),
                         ).length
                       }
                     </span>
@@ -1033,57 +809,9 @@ export default function App() {
                 />
               </div>
             </aside>
-            <section className="equipment-main">
+            <section className="equipment-main" ref={equipmentScroll} onScroll={event => setBackTop(event.currentTarget.scrollTop > event.currentTarget.clientHeight)}>
               <div className="equipment-toolbar">
-                <div className="search-input">
-                  <Search size={17} />
-                  <input
-                    aria-label="搜索器械"
-                    placeholder="搜索器械、型号、品牌"
-                    value={eqQuery}
-                    onChange={(e) => setEqQuery(e.target.value)}
-                  />
-                </div>
-                {(eqType === "fixed" || !eqType) && (
-                  <select
-                    aria-label="器械部位筛选"
-                    value={eqTag}
-                    onChange={(e) => setEqTag(e.target.value)}
-                  >
-                    <option value="">全部部位</option>
-                    {PARTS.map(([id, name]) => (
-                      <option key={id} value={id}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                {eqType === "fixed" && (
-                  <select
-                    aria-label="应用标签筛选"
-                    value={eqApplication}
-                    onChange={(e) => setEqApplication(e.target.value)}
-                  >
-                    <option value="">全部应用标签</option>
-                    {TAGS.map((tag) => (
-                      <option key={tag}>{tag}</option>
-                    ))}
-                  </select>
-                )}
-                {eqType === "free_weight" && (
-                  <select
-                    aria-label="自由力量子类筛选"
-                    value={eqFreeType}
-                    onChange={(e) => setEqFreeType(e.target.value)}
-                  >
-                    <option value="">全部自由力量</option>
-                    {FREE_WEIGHT_TYPES.map(([key, name]) => (
-                      <option key={key} value={key}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
-                )}
+                <EquipmentFilters value={eqFilters} onChange={changeEqFilters} equipment={db.equipment} brands={db.brands} showType={false} showBrand={eqMode === 'part'} />
                 <select
                   aria-label="器械排序"
                   value={eqSort}
@@ -1092,25 +820,10 @@ export default function App() {
                   <option value="name">名称排序</option>
                   <option value="updated">最近更新</option>
                 </select>
-                {(eqType === "fixed" || !eqType) && (
-                  <select
-                    aria-label="器械负重类型筛选"
-                    value={eqLoading}
-                    onChange={(e) => setEqLoading(e.target.value)}
-                  >
-                    <option value="">全部负重类型</option>
-                    <option>插片</option>
-                    <option>挂片</option>
-                  </select>
-                )}
               </div>
               <div className="equipment-count">
                 <span>
-                  {eqGroup
-                    ? eqMode === "brand"
-                      ? db.brands.find((b) => b.id === eqGroup)?.name
-                      : partName(eqGroup)
-                    : "全部器械"}
+                  {[db.brands.find(b => b.id === eqGroup)?.name, eqTag && partName(eqTag)].filter(Boolean).join(' · ') || '全部器械'}
                 </span>
                 <span>{equipment.length} 款器械</span>
               </div>
@@ -1124,14 +837,25 @@ export default function App() {
                     <Picture src={e.image} alt={e.name} />
                     <div className="equipment-card-body">
                       <span className="eyebrow">
-                        {db.brands.find((b) => b.id === e.brandId)?.name}
+                        <BrandLogo
+                          brand={db.brands.find((b) => b.id === e.brandId)}
+                        />
                       </span>
                       <h3>{e.name}</h3>
+                      {e.series && <small className="equipment-series">系列 · {e.series}</small>}
                       <p>
-                        {equipmentSummary(e)}
+                        {equipmentType(e) === "fixed" ? ["固定器械", e.loading].filter(Boolean).join(" · ") : equipmentSummary(e)}
                         <span>{e.model || "型号未填写"}</span>
                       </p>
+                      <PartTags
+                        parts={
+                          equipmentType(e) === "fixed"
+                            ? (e.parts ?? [e.part])
+                            : []
+                        }
+                      />
                       <Tags
+                        colored
                         values={equipmentType(e) === "fixed" ? e.tags : []}
                       />
                       <div className="equipment-card-foot">
@@ -1149,6 +873,7 @@ export default function App() {
                   </button>
                 ))}
               </div>
+              {backTop && <button className="equipment-back-top" aria-label="返回器械列表顶部" onClick={() => equipmentScroll.current?.scrollTo({top:0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"})}>↑ 返回顶部</button>}
               {!equipment.length && (
                 <Empty
                   title={
@@ -1175,7 +900,232 @@ export default function App() {
           </div>
         </main>
       )}
-      {page === "equipment" && eq && (
+      {gym && !pickDraft && (
+        <Modal
+          title="健身房详情"
+            closeLabel="关闭健身房详情"
+          wide
+          className="gym-detail-modal"
+          style={{ "--gym-accent": gymAccent(gym.themeColor) }}
+          onClose={() => setSelected(null)}
+        >
+          <div className="detail-head">
+            <span>场馆档案</span>
+            <div className="actions">
+              <IconButton
+                icon={Pencil}
+                label="编辑健身房"
+                onClick={() => setModal({ type: "gym", row: gym })}
+              />
+              <IconButton
+                icon={Trash2}
+                label="删除健身房"
+                onClick={() => remove("gyms", gym)}
+              />
+            </div>
+          </div>
+          {gym.cover && (
+            <Picture
+              src={gym.cover}
+              alt={gym.name}
+              type="gym"
+              className="gym-cover"
+            />
+          )}
+          <div className="detail-body">
+            <span className="eyebrow">
+              {[gym.province, gym.city, gym.district]
+                .filter(Boolean)
+                .join(" / ") || "位置待补充"}
+            </span>
+            <h2>{gym.name}</h2>
+            <Status
+              visited={gym.visited}
+              disabled={busy}
+              onChange={(visited) => run(() => changeVisit(gym, visited))}
+            />
+            {gym.visitDate && (
+              <p className="muted">到访日期 · {gym.visitDate}</p>
+            )}
+            <p className="address">
+              <MapPin size={16} />
+              {gym.address || "地址待补充"}
+            </p>
+            {gym.lat == null && (
+              <button
+                className="text-button"
+                onClick={() => {
+                  setPickDraft(gym);
+                  setSelected(null);
+                }}
+              >
+                补充地图位置
+                <ArrowUpRight size={15} />
+              </button>
+            )}
+            <Tags values={gym.tags} />
+            {brandTags(gym)}
+            <p className="description">{gym.description || "暂无简介"}</p>
+            {gym.photos?.length > 0 && (
+              <div className="gallery">
+                {gym.photos.map((p, i) => (
+                  <button
+                    key={p}
+                    title={`查看照片 ${i + 1}`}
+                    onClick={() =>
+                      setModal({ type: "photo", src: p, name: gym.name })
+                    }
+                  >
+                    <img src={asset(p)} alt={`${gym.name} 照片 ${i + 1}`} />
+                  </button>
+                ))}
+              </div>
+            )}
+            <section className="detail-section">
+              <div className="section-label">
+                <h3>测评档案</h3>
+                <button
+                  className="text-button"
+                  onClick={() => importFile("review")}
+                >
+                  <Upload size={14} />
+                  导入测评
+                </button>
+              </div>
+              <div className="review-score">
+                <strong>{gym.score ?? "待补充"}</strong>
+                <span>{gym.reviewSource || "外部测评评分"}</span>
+              </div>
+              {gym.reviewUrl ? (
+                <button
+                  className="outline full-width"
+                  onClick={() =>
+                    run(() => window.desktop.call("external", gym.reviewUrl))
+                  }
+                >
+                  查看详细测评
+                  <ExternalLink size={15} />
+                </button>
+              ) : (
+                <p className="muted">尚未添加测评链接</p>
+              )}
+              {gym.area != null && (
+                <p>
+                  面积 · {String(gym.area)} · {gym.areaType || "未说明"}
+                </p>
+              )}
+              {gym.reviewSummary?.length > 0 && (
+                <details>
+                  <summary>测评摘要</summary>
+                  <dl className="summary-table">
+                    {gym.reviewSummary.map((s) => (
+                      <React.Fragment key={s.label}>
+                        <dt>{s.label}</dt>
+                        <dd>{s.value || "未提供"}</dd>
+                      </React.Fragment>
+                    ))}
+                  </dl>
+                </details>
+              )}
+              {gym.reviewVersion && (
+                <p className="muted">测评版本 · {gym.reviewVersion}</p>
+              )}
+              {gym.reviewDate && (
+                <p className="muted">测评时间 · {gym.reviewDate}</p>
+              )}
+              {gym.reviewImportedAt && (
+                <p className="muted">
+                  导入时间 ·{" "}
+                  {new Date(gym.reviewImportedAt).toLocaleString("zh-CN")}
+                </p>
+              )}
+              {gym.rawReview && (
+                <details>
+                  <summary>原始测评</summary>
+                  <pre>{JSON.stringify(gym.rawReview, null, 2)}</pre>
+                  <button
+                    className="text-button"
+                    onClick={() =>
+                      run(async () => {
+                        const file = await window.desktop.call(
+                          "exportReview",
+                          gym.id,
+                        );
+                        if (file) notice(`已导出原始测评\n${file}`);
+                      })
+                    }
+                  >
+                    <Download size={15} />
+                    导出原始测评
+                  </button>
+                </details>
+              )}
+            </section>
+            <section className="detail-section">
+              <div className="section-label">
+                <h3>
+                  关联器械 <span>{linked.length}</span>
+                </h3>
+                <IconButton
+                  icon={Plus}
+                  label="关联器械"
+                  onClick={() => setModal({ type: "link", gym })}
+                />
+              </div>
+              {!linked.length && <p className="muted">暂无关联器械</p>}
+              {linked.length > 0 && <>
+                <EquipmentFilters value={linkedFilters} onChange={setLinkedFilters} equipment={db.equipment.filter(e => linked.some(l => l.equipmentId === e.id))} brands={db.brands} />
+                <p className="linked-filter-results">匹配 {linked.filter(l => { const e = db.equipment.find(e => e.id === l.equipmentId); return e && matchesEquipment(e, linkedFilters, db.brands); }).length} 款 / 已关联 {linked.length} 款</p>
+              </>}
+              {linked.filter(l => { const e = db.equipment.find(e => e.id === l.equipmentId); return e && matchesEquipment(e, linkedFilters, db.brands); }).map((l) => {
+                const e = db.equipment.find((e) => e.id === l.equipmentId);
+                if (!e) return null;
+                return (
+                  <div className="linked-item" key={l.id}>
+                    <button
+                      className="linked-image"
+                      disabled={!e.image}
+                      aria-label={`放大 ${e.name} 图片`}
+                      onClick={() =>
+                        setModal({ type: "photo", src: e.image, name: e.name })
+                      }
+                    >
+                      <Picture src={e.image} alt={e.name} />
+                    </button>
+                    <button
+                      className="linked-open"
+                      onClick={() => {
+                        setEquipmentId(e.id);
+                      }}
+                    >
+                      <strong>{e.name}</strong>
+                      {e.series && <small>系列 · {e.series}</small>}
+                      <small>
+                        <BrandLogo
+                          brand={db.brands.find((b) => b.id === e.brandId)}
+                        />{" "}
+                        · {l.quantity} 台 · {l.status}
+                      </small>
+                      {l.notes && <small>{l.notes}</small>}
+                    </button>
+                    <IconButton
+                      icon={X}
+                      label={`解除关联 ${e.name}`}
+                      onClick={() =>
+                        ask(`解除「${e.name}」的关联？`, async () => {
+                          await window.desktop.call("unlink", l.id);
+                          await refresh();
+                        })
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </section>
+          </div>
+        </Modal>
+      )}
+      {eq && (
         <Modal
           title="器械详情"
           wide
@@ -1200,16 +1150,34 @@ export default function App() {
           }
         >
           <div className="equipment-detail">
-            <Picture src={eq.image} alt={eq.name} />
+            <button
+              className="equipment-detail-image"
+              disabled={!eq.image}
+              aria-label={`放大 ${eq.name} 图片`}
+              onClick={() =>
+                setModal({ type: "photo", src: eq.image, name: eq.name })
+              }
+            >
+              <Picture src={eq.image} alt={eq.name} />
+            </button>
             <div>
               <span className="eyebrow">
-                {db.brands.find((b) => b.id === eq.brandId)?.name}
+                <BrandLogo brand={db.brands.find((b) => b.id === eq.brandId)} />
               </span>
               <h2>{eq.name}</h2>
+              {eq.series && <p className="equipment-series">系列 · {eq.series}</p>}
               <p className="muted">
-                {equipmentSummary(eq)} · {eq.model || "型号未填写"}
+                {equipmentType(eq) === "fixed" ? ["固定器械", eq.loading].filter(Boolean).join(" · ") : equipmentSummary(eq)} · {eq.model || "型号未填写"}
               </p>
-              <Tags values={equipmentType(eq) === "fixed" ? eq.tags : []} />
+              <PartTags
+                parts={
+                  equipmentType(eq) === "fixed" ? (eq.parts ?? [eq.part]) : []
+                }
+              />
+              <Tags
+                colored
+                values={equipmentType(eq) === "fixed" ? eq.tags : []}
+              />
               <p className="description">{eq.notes || "暂无备注"}</p>
               {eq.productUrl && (
                 <button
@@ -1288,6 +1256,7 @@ export default function App() {
         <EquipmentForm
           initial={modal.row}
           brands={db.brands}
+          equipment={db.equipment}
           official={modal.official}
           onClose={() => setModal(null)}
           onSave={(row) => run(() => save("saveEquipment", row))}
@@ -1360,7 +1329,7 @@ export default function App() {
       )}
       {modal?.type === "photo" && (
         <Modal title={modal.name} wide onClose={() => setModal(null)}>
-          <img className="full-photo" src={asset(modal.src)} alt={modal.name} />
+          <Picture className="full-photo" src={modal.src} alt={modal.name} />
         </Modal>
       )}
       {confirm && (

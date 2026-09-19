@@ -2,6 +2,7 @@ const { BrowserWindow, session, net, nativeImage } = require("electron");
 const dns = require("node:dns").promises;
 const cheerio = require("cheerio");
 const catalog = require("./catalog.cjs");
+const { discoverProducts, imageCandidates } = require("./page-extraction.cjs");
 
 function explain(error) {
   const detail = `${error.message || error} ${error.cause?.code || ""}`;
@@ -49,72 +50,14 @@ function parsePage(html, url) {
     throw new Error(
       "网站正在验证或拒绝访问。请打开浏览器辅助窗口，完成验证后读取当前页；仍被拒绝时使用文件导入。",
     );
-  const products = [];
-  const seen = new Set();
-  const gridLinks = $(
-    'ul.products li.product a[href], .product-grid a[href], .products-grid a[href], [itemtype$="/ItemList"] a[href]',
-  );
-  const isListing =
-    /\/product-category\/|\/collections\/[^/]+\/?(?:\?|$)/i.test(url) ||
-    $("body.post-type-archive-product, body.tax-product_cat").length ||
-    (gridLinks.length > 1 &&
-      !$('.single-product, [itemtype$="/Product"]').length &&
-      !/\/products?\/[^/]+/.test(new URL(url).pathname));
-  if (isListing) {
-    $("a[href]").each((_, el) => {
-      try {
-        const link = new URL($(el).attr("href"), url);
-        if (
-          link.origin !== new URL(url).origin ||
-          (!/\/products?\/[^/]+/.test(link.pathname) && !gridLinks.is(el)) ||
-          !["http:", "https:"].includes(link.protocol) ||
-          link.pathname === new URL(url).pathname
-        )
-          return;
-        link.hash = "";
-        const name = (
-          $(el).find("h2,h3,.woocommerce-loop-product__title").first().text() ||
-          $(el).attr("aria-label") ||
-          $(el).text() ||
-          $(el).find("img").attr("alt") ||
-          ""
-        )
-          .trim()
-          .replace(/\s+/g, " ");
-        if (
-          !name ||
-          /^(quick view|read more|select options|add to cart)$/i.test(name) ||
-          seen.has(link.href)
-        )
-          return;
-        seen.add(link.href);
-        const rawImage =
-          $(el).find("img").attr("data-src") ||
-          $(el).find("img").attr("src") ||
-          "";
-        let imageSource = "";
-        try {
-          if (rawImage) {
-            const imageUrl = new URL(rawImage, url);
-            if (["http:", "https:"].includes(imageUrl.protocol) && !imageUrl.username && !imageUrl.password) imageSource = imageUrl.href;
-          }
-        } catch {}
-        products.push({
-          name: name.slice(0, 300),
-          url: link.href,
-          imageSource,
-        });
-      } catch {}
-    });
-    if (!products.length)
-      throw new Error(
-        "这是产品分类页，尚未找到产品链接。请在浏览器辅助窗口进入具体产品后读取。",
-      );
-    return {
-      kind: "listing",
-      products: products.slice(0, 200),
-      warning: "这是产品列表，请选择具体器械后读取；本次最多展示 200 项。",
-    };
+  const products = discoverProducts($, url);
+  const pageName = headingText || title.split(/\s*[|–]\s*/)[0].trim();
+  const modelHeading = /\b(?=[a-z0-9-]*[a-z])(?=[a-z0-9-]*\d)[a-z][a-z0-9-]{2,}\b/i.test(pageName);
+  const explicitListing = /\/product-category\/|\/collections\/[^/]+\/?(?:\?|$)/i.test(url) || $("body.post-type-archive-product, body.tax-product_cat").length;
+  const explicitProduct = $('.single-product, [itemtype$="/Product"]').length;
+  if (explicitListing || (products.length > 1 && !explicitProduct && !modelHeading)) {
+    if (!products.length) throw new Error("这是产品分类页，尚未找到可识别的器械链接。请使用浏览器辅助读取，或进入具体机型页面。");
+    return {kind: "listing", products, warning: "已排除明显导航和配件链接；请核对候选，本次最多展示 200 项。"};
   }
   const result = catalog.parseProduct(html, url);
   const heading = $("h1").first().text().trim();
@@ -124,28 +67,10 @@ function parsePage(html, url) {
   )
     result.name = heading.slice(0, 300);
   result.model ||= $('[itemprop="sku"], .sku').first().text().trim();
-  if (
-    !result.imageSource ||
-    /\.svg(?:[?#]|$)|brand-default|\/logo[./_-]/i.test(result.imageSource)
-  ) {
-    const img = $("main img, article img, .product img")
-      .filter((_, el) => {
-        const src =
-          $(el).attr("data-src") ||
-          $(el).attr("data-lazy-src") ||
-          $(el).attr("src") ||
-          "";
-        return Boolean(src) && !/logo|icon|\.svg(?:[?#]|$)|^data:/i.test(src);
-      })
-      .first();
-    const src =
-      img.attr("data-src") || img.attr("data-lazy-src") || img.attr("src");
-    if (src) {
-      try {
-        result.imageSource = new URL(src, url).href;
-      } catch {}
-    }
-  }
+  result.name = heading || pageName || result.name;
+  result.imageCandidates = imageCandidates($, url, result.name, result.imageSource);
+  result.imageSource = result.imageCandidates[0] || "";
+  result.model ||= result.name.match(/\b(?=[a-z0-9-]*[a-z])(?=[a-z0-9-]*\d)[a-z][a-z0-9-]{2,}\b/i)?.[0] || "";
   if (!result.name)
     throw new Error("页面尚未提供产品名称，请使用浏览器读取或文件导入。");
   result.description = $(
@@ -424,6 +349,13 @@ function createWebImporter(store, getWindow) {
         const source = originals[i]?.currentSrc;
         if (source) img.setAttribute('src', source);
       });
+      const selector = 'main [class], article [class], [role="main"] [class], #content [class], .category-image, .product-image';
+      const originalsWithStyle = document.querySelectorAll(selector);
+      copy.querySelectorAll(selector).forEach((element, i) => {
+        if (i >= 400 || element.closest('nav,header,footer,aside')) return;
+        const background = getComputedStyle(originalsWithStyle[i]).backgroundImage;
+        if (background && background !== 'none') element.style.backgroundImage = background;
+      });
       return copy.outerHTML;
     })()`);
     if (html.length > 8 * 1024 ** 2) throw new Error("网页内容超过大小限制。");
@@ -445,67 +377,98 @@ function createWebImporter(store, getWindow) {
       clearTimeout(timer);
     }
   }
+  // Bounded, session-only originals: previews never write into the data directory.
+  const previewImages = new Map();
+  const capturedImages = new Map();
+  const cachedImage = source => capturedImages.get(source) || previewImages.get(source);
+  let previewBytes = 0;
+  function cacheImage(source, buffer) {
+    if (previewImages.has(source)) previewBytes -= previewImages.get(source).length;
+    previewImages.delete(source);
+    previewImages.set(source, buffer);
+    previewBytes += buffer.length;
+    while (previewBytes > 64 * 1024 ** 2 || previewImages.size > 120) {
+      const key = previewImages.keys().next().value;
+      previewBytes -= previewImages.get(key).length;
+      previewImages.delete(key);
+    }
+  }
+  function imageOptions(result) {
+    return [...new Set([result.imageSource, ...(result.imageCandidates || [])].filter(Boolean))].slice(0, 4);
+  }
   async function finish(result, brandId) {
     const stamp = generation;
     if (result.kind === "listing") return result;
-    let warning = "";
-    if (result.imageSource) {
+    let warning = "", lastError;
+    for (const source of imageOptions(result)) {
       try {
         let image;
-        try {
-          image = await bytes(
-            result.imageSource,
-            20 * 1024 ** 2,
-            result.productUrl,
-          );
-        } catch (error) {
+        try { image = cachedImage(source) ? {bytes: cachedImage(source)} : await bytes(source, 20 * 1024 ** 2, result.productUrl); }
+        catch (error) {
           ensureCurrent(stamp);
-          // Some cross-origin image hosts reject an explicit referrer. Retry once
-          // without it, still using the same session and public-address validation.
           if (/大小限制|频率/.test(error.message)) throw error;
-          image = await bytes(result.imageSource, 20 * 1024 ** 2);
+          image = await bytes(source, 20 * 1024 ** 2);
         }
         ensureCurrent(stamp);
         result.image = catalog.saveImage(store, image.bytes, "equipment");
-      } catch (e) {
-        ensureCurrent(stamp);
-        warning = `产品信息已读取，图片下载失败：${explain(e)} 可上传本地图片。`;
-      }
-    } else warning = "产品信息已读取，未找到产品图片，可上传本地图片。";
-    return {
-      ...result,
-      image: result.image || "",
-      brandId,
-      warning,
-      sourceType: "official_web",
-      sourceUrl: result.productUrl || "",
-      sourceDate: new Date().toISOString(),
-      verificationStatus: "needs_review",
-    };
-  }
-  async function thumbnail(result) {
-    if (result.kind === "listing" || !result.imageSource) return result;
-    try {
-      const response = await bytes(
-        result.imageSource,
-        2 * 1024 ** 2,
-        result.productUrl,
-      );
-      const image = nativeImage.createFromBuffer(response.bytes);
-      if (!image.isEmpty()) {
-        const size = image.getSize();
-        const resized =
-          size.width >= size.height
-            ? image.resize({ width: Math.min(size.width, 240) })
-            : image.resize({ height: Math.min(size.height, 180) });
-        const jpeg = resized.toJPEG(65);
-        if (jpeg.length <= 100 * 1024)
-          result.thumbnail = `data:image/jpeg;base64,${jpeg.toString("base64")}`;
-      }
-    } catch {
-      /* A missing thumbnail never prevents metadata review or final image import. */
+        result.imageSource = source;
+        break;
+      } catch (error) { ensureCurrent(stamp); lastError = error; }
     }
+    if (!result.image) warning = lastError ? `产品信息已读取，图片下载失败：${explain(lastError)} 可上传本地图片。` : "产品信息已读取，未找到产品图片，可上传本地图片。";
+    return { ...result, image: result.image || "", brandId, warning, sourceType: "official_web", sourceUrl: result.productUrl || "", sourceDate: new Date().toISOString(), verificationStatus: "needs_review" };
+  }
+  async function thumbnail(result, capturedOnly = false) {
+    if (result.kind === "listing") return result;
+    const stamp = generation;
+    result.imageOptions = [];
+    for (const source of imageOptions(result)) {
+      try {
+        let response;
+        try {
+          if (cachedImage(source)) response = {bytes: cachedImage(source)};
+          else if (capturedOnly) continue;
+          else response = await bytes(source, 20 * 1024 ** 2, result.productUrl);
+        }
+        catch (error) {
+          ensureCurrent(stamp);
+          if (/大小限制|频率/.test(error.message)) throw error;
+          response = await bytes(source, 20 * 1024 ** 2);
+        }
+        ensureCurrent(stamp);
+        catalog.imageExtension(response.bytes);
+        const image = nativeImage.createFromBuffer(response.bytes);
+        let jpeg;
+        if (image.isEmpty()) {
+          const {loadImage, createCanvas} = require('@napi-rs/canvas');
+          const decoded = await loadImage(response.bytes);
+          ensureCurrent(stamp);
+          const ratio = Math.min(1, 240 / decoded.width, 180 / decoded.height);
+          const canvas = createCanvas(Math.max(1, Math.round(decoded.width * ratio)), Math.max(1, Math.round(decoded.height * ratio)));
+          canvas.getContext('2d').drawImage(decoded, 0, 0, canvas.width, canvas.height);
+          jpeg = canvas.encodeSync('jpeg', 65);
+        } else {
+          const size = image.getSize();
+          const ratio = Math.min(1, 240 / size.width, 180 / size.height);
+          jpeg = image.resize({width: Math.max(1, Math.round(size.width * ratio)), height: Math.max(1, Math.round(size.height * ratio))}).toJPEG(65);
+        }
+        if (jpeg.length > 100 * 1024) continue;
+        if (!capturedOnly) cacheImage(source, response.bytes);
+        result.imageOptions.push({source, preview: `data:image/jpeg;base64,${jpeg.toString("base64")}`});
+        if (result.imageOptions.length === 3) break;
+      } catch { ensureCurrent(stamp); /* Keep metadata available when an image fails. */ }
+    }
+    result.thumbnail = result.imageOptions[0]?.preview || "";
+    result.imageSource = result.imageOptions[0]?.source || result.imageSource || "";
     return result;
+  }
+  async function preview(result, brandId) {
+    if (result.kind === "listing") return result;
+    result = await thumbnail(result);
+    return {...result, brandId, pendingWebImage: !!result.thumbnail,
+      warning: result.thumbnail ? "" : "已读取资料，图片未能加载。可在辅助浏览器打开后重新读取。",
+      sourceType: "official_web", sourceUrl: result.productUrl || "",
+      sourceDate: new Date().toISOString(), verificationStatus: "needs_review"};
   }
   function checkBrand(brandId) {
     store.require();
@@ -513,6 +476,32 @@ function createWebImporter(store, getWindow) {
       throw new Error("请先选择品牌。");
   }
   return {
+    captureDiscard: () => { capturedImages.clear(); return true; },
+    capturePreview: async ({bundle, brandId}) => {
+      checkBrand(brandId);
+      const pages = require('./browser-capture.cjs').validateCapture(bundle);
+      capturedImages.clear();
+      for (const page of pages) for (const image of page.images)
+        capturedImages.set(image.source, image.bytes);
+      const products = [], errors = [];
+      for (const page of pages) {
+        try {
+          const result = parsePage(page.html, page.url);
+          if (result.kind === 'listing') continue;
+          // Captured candidates are explicitly chosen from the rendered page.
+          result.imageCandidates = page.images.map(image => image.source);
+          result.imageSource = result.imageCandidates[0] || '';
+          const data = await thumbnail(result, true);
+          products.push({...data, captured: true, url: page.url, brandId,
+            pendingWebImage: !!data.thumbnail, sourceUrl: page.url,
+            sourceType: 'official_web', sourceDate: new Date().toISOString(),
+            verificationStatus: 'needs_review'});
+        } catch (error) { errors.push(`${page.url}: ${explain(error)}`); }
+      }
+      if (!products.length) throw new Error(`采集文件中没有可导入的器械详情。${errors[0] || '请采集具体产品页或包含详情的目录。'}`);
+      const warning = errors.length ? `${errors.length} 个页面未能识别，其余资料待确认保存。` : '';
+      return products.length === 1 ? {...products[0], warning} : {kind: 'listing', products, warning};
+    },
     productMetadata: async ({ url, brandId, browser: useBrowser = false }) => {
       checkBrand(brandId);
       try {
@@ -571,7 +560,7 @@ function createWebImporter(store, getWindow) {
             if (result.kind !== "listing" && !result.imageSource)
               throw new Error("页面需要浏览器补充读取。");
             ensureCurrent(stamp);
-            return await finish(result, brandId);
+            return await preview(result, brandId);
           } catch (e) {
             ensureCurrent(stamp);
             if (/频率|大小限制|不是网页/.test(e.message)) throw e;
@@ -593,7 +582,7 @@ function createWebImporter(store, getWindow) {
             await new Promise((r) => setTimeout(r, 750));
           }
           ensureCurrent(stamp);
-          return await finish(result, brandId);
+          return await preview(result, brandId);
         } finally {
           if (!win.isDestroyed()) win.destroy();
           if (automatic === win) automatic = null;
@@ -622,13 +611,15 @@ function createWebImporter(store, getWindow) {
       checkBrand(brandId);
       try {
         if (assistedError) throw new Error(assistedError);
-        return await finish(await rendered(assisted), brandId);
+        return await preview(await rendered(assisted), brandId);
       } catch (e) {
         throw new Error(explain(e));
       }
     },
     browserClose: () => {
       generation++;
+      previewImages.clear();
+      previewBytes = 0;
       for (const controller of controllers)
         controller.abort(new Error("读取已取消。"));
       if (automatic && !automatic.isDestroyed()) automatic.destroy();

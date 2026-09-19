@@ -85,9 +85,36 @@ const { createCanvas } = require("@napi-rs/canvas");
     await expect(dialog.locator("tbody tr")).toHaveCount(7);
     assert.equal((await call("state")).equipment.length, 0);
     checks.push("directory UI scans 7 candidates without formal records");
-    let batch = (await call("batchList"))[0];
-    for (const c of batch.candidates)
-      batch = await call("batchFetch", { id: batch.id, candidateId: c.id });
+    assert.equal((await call("batchList")).length, 0);
+    const firstId = await dialog.getByLabel("继续已有批次").inputValue();
+    await dialog.getByRole("button", { name: "删除候选 Blocked", exact: true }).click();
+    await expect(dialog.locator("tbody tr")).toHaveCount(6);
+    await dialog.getByLabel("选择 Missing", { exact: true }).check();
+    await dialog.getByLabel("选择 Timeout", { exact: true }).check();
+    await dialog.getByRole("button", { name: "删除所选候选（2）", exact: true }).click();
+    await expect(dialog.locator("tbody tr")).toHaveCount(4);
+    assert.equal((await call("state")).equipment.length, 0);
+    await dialog.getByRole("button", { name: "扫描页面", exact: true }).click();
+    await expect(dialog.locator("tbody tr")).toHaveCount(7);
+    await assert.rejects(call("batchRead", { id: firstId }));
+    const secondId = await dialog.getByLabel("继续已有批次").inputValue();
+    await dialog.getByRole("button", { name: "关闭工作台", exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    await assert.rejects(call("batchRead", { id: secondId }));
+    assert.equal((await call("batchList")).length, 0);
+    checks.push("single/bulk candidate deletion, rescan and close discard drafts without saving history or equipment");
+    await app.close();
+    await launch();
+    assert.equal((await call("batchList")).length, 0);
+    await page.getByRole("button", { name: "器械库", exact: true }).click();
+    await page.getByRole("button", { name: "批量网页导入", exact: true }).click();
+    const work = page.getByRole("dialog", { name: "批量器械导入工作台" });
+    await work.getByLabel("目录或系列页地址").fill(url);
+    await work.getByRole("button", { name: "扫描页面", exact: true }).click();
+    await expect(work.locator("tbody tr")).toHaveCount(7);
+    await work.getByRole("button", { name: "补全未读取详情", exact: true }).click();
+    await expect(work.getByRole("status")).toContainText("详情队列已完成", { timeout: 120000 });
+    let batch = await call("batchRead", { id: await work.getByLabel("继续已有批次").inputValue() });
     assert.equal(
       batch.candidates.find((c) => c.name === "Blocked").error.status,
       403,
@@ -101,21 +128,9 @@ const { createCanvas } = require("@napi-rs/canvas");
       "timeout",
     );
     checks.push(
-      "individual 403, 404 and timeout persist without failing batch",
+      "individual 403, 404 and timeout remain visible in draft without failing batch",
     );
-    await app.close();
-    await launch();
-    batch = await call("batchRead", { id: batch.id });
-    assert.equal(batch.candidates.length, 7);
-    assert.equal(batch.candidates.filter((c) => c.detailFetched).length, 4);
-    checks.push("batch and detail results resume after app restart");
-    await page.getByRole("button", { name: "器械库", exact: true }).click();
-    await page
-      .getByRole("button", { name: "批量网页导入", exact: true })
-      .click();
-    const work = page.getByRole("dialog", { name: "批量器械导入工作台" });
-    await work.getByLabel("继续已有批次").selectOption(batch.id);
-    await expect(work.locator("tbody tr")).toHaveCount(7);
+    assert.equal((await call("batchList")).length, 0);
     await work.locator("summary").click();
     await work.getByLabel("选择 Dumbbell", { exact: true }).check();
     await work.getByLabel("选择 Treadmill", { exact: true }).check();
@@ -145,6 +160,20 @@ const { createCanvas } = require("@napi-rs/canvas");
     checks.push(
       "explicit UI confirmation creates four classified records with localized images and source",
     );
+    assert.equal((await call("batchList")).length, 1);
+    await expect(work.getByRole("button", { name: "删除候选 Chest Press", exact: true })).toBeDisabled();
+    await work.getByRole("button", { name: "删除候选 Blocked", exact: true }).click();
+    await expect(work.locator("tbody tr")).toHaveCount(6);
+    assert.equal((await call("batchList"))[0].candidates.length, 7);
+    await work.getByRole("button", { name: "关闭工作台", exact: true }).click();
+    await expect(work).toHaveCount(0);
+    await app.close();
+    await launch();
+    const history = await call("batchList");
+    assert.equal(history.length, 1);
+    assert.equal(history[0].candidates.length, 7);
+    assert.equal((await call("state")).equipment.length, 4);
+    checks.push("confirmed history survives restart; closing history edits preserves committed candidates and equipment");
     await page.screenshot({
       path: path.resolve("test-results/batch-workbench.png"),
     });

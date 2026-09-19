@@ -1,4 +1,10 @@
 @import url("./theme.css");
+.website-image-options { display: flex; flex-wrap: wrap; gap: 12px; }
+.website-image-options button { display: flex; flex-direction: column; align-items: center; padding: 8px; gap: 6px; width: 142px; background: white; }
+.website-image-options button[aria-pressed="true"] { border: 2px solid #397c70; background: #edf6f2; }
+.website-image-options img { width: 120px; height: 96px; object-fit: contain; }
+.website-image-choices .website-image-skip { align-self: flex-start; }
+.website-image-skip[aria-pressed="true"] { border-color: #397c70; background: #edf6f2; }
 .parallel-tags,
 .brand-tags {
   display: flex;

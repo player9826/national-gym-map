@@ -139,7 +139,7 @@ app.whenReady().then(async () => {
       const rel = decodeURIComponent(u.pathname).replace(/^\//, "");
       if (
         u.host !== "local" ||
-        !/^(equipment|gyms)\/[a-zA-Z0-9_.-]+$/.test(rel) ||
+        !/^(equipment|gyms|brands)\/[a-zA-Z0-9_.-]+$/.test(rel) ||
         !store.root
       )
         return new Response("Forbidden", { status: 403 });

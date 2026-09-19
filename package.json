@@ -1,6 +1,6 @@
 {
   "name": "national-gym-map",
-  "version": "1.4.0",
+  "version": "1.5.2",
   "private": true,
   "description": "全国健身房地图与个人器械档案",
   "author": "National Gym Map",
@@ -56,6 +56,10 @@
     ],
     "afterPack": "scripts/after-pack.cjs",
     "extraResources": [
+      {
+        "from": "browser-capture",
+        "to": "browser-capture"
+      },
       {
         "from": "build/icon.ico",
         "to": "icon.ico"

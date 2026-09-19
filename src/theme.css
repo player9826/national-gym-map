@@ -506,8 +506,7 @@ button svg {
   overflow: auto;
   padding: 0;
   text-align: left;
-  border: 1px solid #dce5e1;
-  border-top: 3px solid var(--gym-accent, #397c70);
+  border: 3px solid var(--gym-accent, #397c70);
   border-radius: 12px;
   background: #fff;
   color: #263b3c;
@@ -518,10 +517,10 @@ button svg {
 }
 .gym-preview:hover {
   background: #fff;
-  border-top-color: var(--gym-accent, #397c70);
+  border-color: var(--gym-accent, #397c70);
 }
 .gym-preview:focus-visible {
-  outline: 3px solid var(--gym-accent, #397c70);
+  outline: 3px solid #263b3c;
   outline-offset: 3px;
 }
 .gym-preview .gym-preview-cover {
@@ -552,7 +551,7 @@ button svg {
 }
 .gym-preview-heading > svg {
   flex-shrink: 0;
-  color: var(--gym-accent, #397c70);
+  color: #397c70;
   margin-top: 3px;
 }
 .gym-preview-location {
@@ -579,7 +578,7 @@ button svg {
   gap: 5px;
 }
 .gym-preview-visit {
-  color: var(--gym-accent, #397c70);
+  color: #397c70;
   font-weight: 600;
 }
 .gym-preview-review {
@@ -593,7 +592,7 @@ button svg {
   display: flex;
   align-items: center;
   gap: 4px;
-  color: var(--gym-accent, #397c70);
+  color: #397c70;
   font-size: 11px;
 }
 .gym-item.selected {

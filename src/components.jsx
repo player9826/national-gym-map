@@ -1,6 +1,19 @@
 import React, { useEffect, useRef, useState } from "react";
 import { X, LoaderCircle, ImagePlus, Dumbbell, MapPin } from "lucide-react";
-import { asset } from "./constants";
+import { asset, PARTS, PART_TAGS, partName, tagLabel, isCustomPart } from "./constants";
+import { createPortal } from "react-dom";
+const modalStack = [];
+function syncModals() {
+  modalStack.forEach((node, i) => {
+    const top = i === modalStack.length - 1;
+    node.inert = !top;
+    node.setAttribute("aria-modal", String(top));
+    node.setAttribute("aria-hidden", String(!top));
+    node.parentElement.style.zIndex = String(1000 + i * 10);
+  });
+  const root = document.getElementById("root");
+  if (root) root.inert = modalStack.length > 0;
+}
 export function IconButton({ icon: Icon, label, ...props }) {
   return (
     <button
@@ -14,15 +27,39 @@ export function IconButton({ icon: Icon, label, ...props }) {
     </button>
   );
 }
-export function Modal({ title, children, onClose, wide = false, footer }) {
+export function Modal({
+  title,
+  children,
+  onClose,
+  wide = false,
+  footer,
+  className = "",
+  closeLabel = "关闭弹窗",
+  style,
+}) {
   const ref = useRef();
   useEffect(() => {
     const prev = document.activeElement;
-    ref.current?.focus();
-    return () => prev?.focus?.();
+    const node = ref.current;
+    modalStack.push(node);
+    syncModals();
+    node?.focus();
+    return () => {
+      const index = modalStack.indexOf(node);
+      if (index !== -1) modalStack.splice(index, 1);
+      syncModals();
+      const top = modalStack.at(-1);
+      if (prev?.isConnected && (!top || top.contains(prev))) prev.focus?.();
+      else top?.focus();
+    };
   }, []);
   function key(e) {
-    if (e.key === "Escape") onClose();
+    if (modalStack.at(-1) !== ref.current) return;
+    if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      onClose();
+    }
     if (e.key === "Tab") {
       const items = [
         ...ref.current.querySelectorAll(
@@ -46,10 +83,19 @@ export function Modal({ title, children, onClose, wide = false, footer }) {
       }
     }
   }
-  return (
-    <div className="modal-backdrop">
+  return createPortal(
+    <div
+      className="modal-backdrop"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && modalStack.at(-1) === ref.current) {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
+    >
       <section
-        className={`modal ${wide ? "wide" : ""}`}
+        className={`modal ${wide ? "wide" : ""} ${className}`}
+        style={style}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -59,12 +105,13 @@ export function Modal({ title, children, onClose, wide = false, footer }) {
       >
         <header className="modal-head">
           <h2>{title}</h2>
-          <IconButton icon={X} label="关闭弹窗" onClick={onClose} />
+          <IconButton icon={X} label={closeLabel} onClick={onClose} />
         </header>
         <div className="modal-content">{children}</div>
         {footer && <footer className="modal-foot">{footer}</footer>}
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
 export function Field({ label, children, full, required }) {
@@ -78,12 +125,34 @@ export function Field({ label, children, full, required }) {
     </label>
   );
 }
-export function Tags({ values = [] }) {
+export function Tags({ values = [], colored = false }) {
   return (
     <div className="tags">
       {values.map((t) => (
-        <span key={t}>{t}</span>
+        <span
+          key={t}
+          data-part={
+            colored
+              ? Object.keys(PART_TAGS).find((key) => PART_TAGS[key].includes(t))
+              : undefined
+          }
+        >
+          {tagLabel(t)}
+        </span>
       ))}
+    </div>
+  );
+}
+export function PartTags({ parts = [] }) {
+  return (
+    <div className="tags part-tags">
+      {[...new Set(parts)]
+        .filter((key) => isCustomPart(key) || PARTS.some(([id]) => id === key))
+        .map((key) => (
+          <span key={key} data-part={isCustomPart(key) ? "OTHER" : key}>
+            {partName(key)}
+          </span>
+        ))}
     </div>
   );
 }

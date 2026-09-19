@@ -2,24 +2,25 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { atomic, validate, blank, inside, hash } = require('./storage.cjs');
+const { normalizeClassification } = require('./equipment-model.cjs');
 const FORMAT = 'national-gym-map-shared';
 const reserved = value => ['__proto__', 'constructor', 'prototype'].includes(value);
 const CLASSIFICATION = ['equipmentType', 'freeWeightType', 'part', 'parts', 'tags', 'loading'];
 // Only these public facts are ever exported or accepted from a publisher.
 const FIELDS = {
-  brands: ['id', 'name', 'website'],
+  brands: ['id', 'name', 'website', 'logo'],
   gyms: ['id', 'name', 'province', 'city', 'district', 'address', 'lat', 'lng', 'brandIds', 'cover', 'photos', 'themeColor'],
-  equipment: ['id', 'name', 'brandId', 'equipmentType', 'freeWeightType', 'part', 'parts', 'tags', 'loading', 'model', 'image', 'imageSource', 'productUrl', 'sourceType', 'sourceUrl', 'sourceDate', 'verificationStatus'],
+  equipment: ['id', 'name', 'brandId', 'equipmentType', 'freeWeightType', 'part', 'parts', 'tags', 'loading', 'model', 'series', 'image', 'imageSource', 'productUrl', 'sourceType', 'sourceUrl', 'sourceDate', 'verificationStatus'],
   links: ['id', 'gymId', 'equipmentId', 'quantity'],
 };
 const pick = (row, keys) => Object.fromEntries(keys.filter(k => Object.hasOwn(row, k)).map(k => [k, structuredClone(row[k])]));
 const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-const asset = value => typeof value === 'string' && /^(equipment|gyms)\/[a-zA-Z0-9_.-]+$/.test(value) && !value.includes('..');
+const asset = value => typeof value === 'string' && /^(equipment|gyms|brands)\/[a-zA-Z0-9_.-]+$/.test(value) && !value.includes('..');
 function publicCatalog(db) {
   return Object.fromEntries(Object.entries(FIELDS).map(([key, fields]) => [key, db[key].map(row => pick(row, fields))]));
 }
 function imageRefs(data) {
-  return [...new Set([...data.gyms.flatMap(r => [r.cover, ...(r.photos || [])]), ...data.equipment.map(r => r.image)].filter(Boolean))];
+  return [...new Set([...data.gyms.flatMap(r => [r.cover, ...(r.photos || [])]), ...data.equipment.map(r => r.image), ...data.brands.map(r => r.logo)].filter(Boolean))];
 }
 function checkCatalog(data) {
   if (!data || typeof data !== 'object') throw new Error('共享资料格式无效。');
@@ -28,6 +29,7 @@ function checkCatalog(data) {
     if (data[key].some(r => !r || reserved(r.id))) throw new Error('共享记录标识无效。');
   }
   const clean = publicCatalog(data);
+  clean.equipment = clean.equipment.map(row => normalizeClassification(row, { legacy: !row.equipmentType }));
   for (const ref of imageRefs(clean)) if (!asset(ref)) throw new Error('共享图片路径无效。');
   validate({ ...blank(), ...clean, gyms: clean.gyms.map(r => ({ ...r, visited: false })) });
   return clean;
@@ -50,6 +52,7 @@ function exportShared(store, { destination, includeImages = false }) {
   if (!includeImages) {
     for (const row of data.gyms) { delete row.cover; delete row.photos; }
     for (const row of data.equipment) delete row.image;
+    for (const row of data.brands) delete row.logo;
   }
   const buffers = imageRefs(data).map(ref => {
     const source = path.join(store.root, ref);
@@ -99,7 +102,7 @@ function createSharedCatalog(store, fetchBytes) {
         if (row.brandId) row.brandId = map('brands', row.brandId);
         if (row.brandIds) row.brandIds = row.brandIds.map(id => map('brands', id));
         if (key === 'links') { row.gymId = map('gyms', row.gymId); row.equipmentId = map('equipment', row.equipmentId); }
-        for (const field of ['image', 'cover']) if (row[field]) row[field] = images[row[field]];
+        for (const field of ['image', 'cover', 'logo']) if (row[field]) row[field] = images[row[field]];
         if (row.photos) row.photos = row.photos.map(ref => images[ref]);
         let local = next[key].find(r => r.id === mappings[key][source.id]);
         if (!local && sourceId === store.db.metadata?.sharedPublisherId) local = next[key].find(r => r.id === source.id);

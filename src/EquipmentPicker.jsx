@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import EquipmentFilters from "./EquipmentFilters";
+import {matchesEquipment} from "./equipment-filtering";
 import { Modal, Picture, Tags, Field } from "./components";
 import {
   PARTS,
@@ -15,23 +17,10 @@ export default function EquipmentPicker({
   onClose,
   onSave,
 }) {
-  const [type, setType] = useState(""),
-    [freeType, setFreeType] = useState("");
-  const [brand, setBrand] = useState(""),
-    [part, setPart] = useState(""),
-    [loading, setLoading] = useState(""),
-    [query, setQuery] = useState(""),
-    [selection, setSelection] = useState({});
-  const existing = links.filter((l) => l.gymId === gym.id);
-  const visible = equipment.filter(
-    (e) =>
-      (!type || equipmentType(e) === type) &&
-      (!freeType || e.freeWeightType === freeType) &&
-      (!brand || e.brandId === brand) &&
-      (!part || (e.parts ?? [e.part]).includes(part)) &&
-      (!loading || e.loading === loading) &&
-      `${e.name} ${e.model}`.toLowerCase().includes(query.toLowerCase()),
-  );
+  const [filters, setFilters] = useState({});
+  const [selection, setSelection] = useState({});
+  const existing = links.filter(l => l.gymId === gym.id);
+  const visible = equipment.filter(e => matchesEquipment(e, filters, brands));
   function change(id, key, value) {
     setSelection({ ...selection, [id]: { ...selection[id], [key]: value } });
   }
@@ -54,82 +43,8 @@ export default function EquipmentPicker({
         </>
       }
     >
-      <div className="picker-filters">
-        <input
-          aria-label="搜索待关联器械"
-          placeholder="搜索器械、型号"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <select
-          aria-label="选择器械类型"
-          value={type}
-          onChange={(e) => {
-            setType(e.target.value);
-            setFreeType("");
-            setPart("");
-            setLoading("");
-          }}
-        >
-          <option value="">全部类型</option>
-          {EQUIPMENT_TYPES.map(([key, name]) => (
-            <option key={key} value={key}>
-              {name}
-            </option>
-          ))}
-        </select>
-        {type === "free_weight" && (
-          <select
-            aria-label="选择自由力量子类"
-            value={freeType}
-            onChange={(e) => setFreeType(e.target.value)}
-          >
-            <option value="">全部自由力量</option>
-            {FREE_WEIGHT_TYPES.map(([key, name]) => (
-              <option key={key} value={key}>
-                {name}
-              </option>
-            ))}
-          </select>
-        )}
-        <select
-          aria-label="选择器械品牌"
-          value={brand}
-          onChange={(e) => setBrand(e.target.value)}
-        >
-          <option value="">全部品牌</option>
-          {brands.map((b) => (
-            <option value={b.id} key={b.id}>
-              {b.name}
-            </option>
-          ))}
-        </select>
-        {(!type || type === "fixed") && (
-          <>
-            <select
-              aria-label="选择器械部位"
-              value={part}
-              onChange={(e) => setPart(e.target.value)}
-            >
-              <option value="">全部部位</option>
-              {PARTS.map(([id, name]) => (
-                <option key={id} value={id}>
-                  {name}
-                </option>
-              ))}
-            </select>
-            <select
-              aria-label="选择负重类型"
-              value={loading}
-              onChange={(e) => setLoading(e.target.value)}
-            >
-              <option value="">全部负重类型</option>
-              <option>插片</option>
-              <option>挂片</option>
-            </select>
-          </>
-        )}
-      </div>
+      <div className="picker-filters"><EquipmentFilters value={filters} onChange={setFilters} equipment={equipment} brands={brands} searchLabel="搜索待关联器械" /></div>
+      <p className="linked-filter-results">匹配 {visible.length} 款</p>
       <div className="picker-grid">
         {visible.map((e) => {
           const old = existing.find((l) => l.equipmentId === e.id);
@@ -157,6 +72,7 @@ export default function EquipmentPicker({
             >
               <Picture src={e.image} alt={e.name} />
               <strong>{e.name}</strong>
+              {e.series && <small>系列 · {e.series}</small>}
               <small>
                 {brands.find((b) => b.id === e.brandId)?.name} ·{" "}
                 {equipmentSummary(e)}

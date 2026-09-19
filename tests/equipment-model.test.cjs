@@ -11,6 +11,41 @@ function setup(t) {
   const config = path.join(base, 'location.json'), root = path.join(base, 'data');
   return { base, config, root, store: new Store(config) };
 }
+test('custom body parts and new application tags validate without weakening built-in requirements', t => {
+  const {store,root}=setup(t);store.configure(root);
+  const base={name:'Neck machine',brandId:'brand-1',equipmentType:'fixed',parts:['CUSTOM: 颈部 '],tags:[],series:'  Precision  '};
+  const saved=c.upsert(store,'equipment',base);
+  assert.deepEqual(saved.parts,['CUSTOM:颈部']);assert.equal(saved.part,'CUSTOM:颈部');assert.equal(saved.series,'Precision');
+  assert.throws(()=>c.upsert(store,'equipment',{...base,parts:['CUSTOM:颈部','CHEST']}),/应用标签/);
+  assert.throws(()=>c.upsert(store,'equipment',{...base,tags:['推胸']}),/属于/);
+  for(const parts of [['CUSTOM: '],['CUSTOM:'+ '长'.repeat(31)],['CUSTOM:颈\n部'],['UNKNOWN'],Array.from({length:21},(_,i)=>`CUSTOM:部位${i}`)])
+    assert.throws(()=>c.upsert(store,'equipment',{...base,parts}),/部位/);
+  for(const [part,tag] of [['ARM','小臂'],['LEG','小腿'],['SHOULDER','推肩']]) {
+    const row=c.upsert(store,'equipment',{...base,name:tag,parts:[part],tags:[tag]});
+    assert.deepEqual(row.tags,[tag==='推肩'?'肩推':tag]);
+  }
+  assert.throws(()=>c.upsert(store,'equipment',{...base,series:'x'.repeat(20001)}),/系列/);
+  assert.throws(()=>c.upsert(store,'equipment',{...base,series:{name:'x'}}),/系列/);
+  assert.throws(()=>c.equipment({...base,equipmentType:'',parts:['CUSTOM:']},{allowIncomplete:true}),/部位/);
+});
+test('custom classification and trimmed series survive structured import, restart and backup restore', async t => {
+  const {store,root,config}=setup(t);store.configure(root);
+  const draft=c.prepareImport(store,{kind:'equipment',raw:[{name:'Imported neck',brandId:'brand-1',equipmentType:'fixed',parts:['CUSTOM: 颈部 '],tags:[],series:'  Alpha  '}]});
+  c.commitImport(store,draft);const id=store.db.equipment[0].id;
+  assert.equal(new Store(config).db.equipment[0].series,'Alpha');
+  const backup=await store.backup();c.upsert(store,'equipment',{id,name:'Changed',series:'Beta'});await store.restore(backup.path);
+  assert.deepEqual(store.db.equipment[0].parts,['CUSTOM:颈部']);assert.equal(store.db.equipment[0].series,'Alpha');
+});
+
+test('existing long series names survive restart and unrelated edits without truncation', t => {
+  const {store,root,config}=setup(t); store.configure(root);
+  const series='Legacy '.repeat(30).trim();
+  const saved=c.upsert(store,'equipment',{name:'Legacy treadmill',brandId:'brand-1',equipmentType:'cardio',series});
+  const reopened=new Store(config);
+  assert.equal(reopened.db.equipment[0].series,series);
+  c.upsert(reopened,'equipment',{id:saved.id,notes:'An unrelated edit'});
+  assert.equal(reopened.db.equipment[0].series,series);
+});
 test('four types enforce applicable fields and clear stale classification while preserving identity and source', t => {
   const { store, root } = setup(t); store.configure(root);
   const base = { name: 'test', brandId: 'brand-1', parts: ['CHEST'], tags: ['推胸'], productUrl: 'https://example.com/product' };
