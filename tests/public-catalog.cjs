@@ -7,7 +7,8 @@ const {_electron:electron,expect}=require('@playwright/test');
  const profile=path.join(temp,'profile'),store=new Store(path.join(profile,'location.json'));store.configure(path.join(temp,'data'));
  const catalog=createSharedCatalog(store,async url=>fs.readFileSync(path.join('shared',new URL(url).pathname.slice(1))));
  const preview=await catalog.sharedPreview({url:'https://example.test/manifest.json'});await catalog.sharedApply({token:preview.token});
- assert.equal(store.db.gyms.length,15);assert.equal(store.db.equipment.length,635);assert.equal(store.db.links.length,214);
+ const expected=JSON.parse(fs.readFileSync(path.join(__dirname,'../shared/catalog.json'),'utf8'));
+ for(const collection of ['gyms','equipment','brands','links']) assert.equal(store.db[collection].length,expected[collection].length,`${collection} count matches the published snapshot`);
  assert.ok(store.db.gyms.every(g=>g.visited===false&&!g.description&&!g.rawReview));
  const again=await catalog.sharedPreview({url:'https://example.test/manifest.json'});assert.equal(again.counts.added,0);assert.equal(again.downloadImages,0);
  let app;try{
