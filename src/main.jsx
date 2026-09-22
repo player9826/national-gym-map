@@ -2,6 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./style.css";
+import "./web.css";
 class Boundary extends React.Component {
   state = { error: null };
   static getDerivedStateFromError(error) {

@@ -3,12 +3,6 @@ name: Build Windows release draft
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-    paths:
-      - package.json
-      - package-lock.json
-      - '.github/workflows/release.yml'
     tags:
       - 'v*'
 
@@ -77,12 +71,3 @@ jobs:
           }
           gh release upload $env:RELEASE_TAG release/NationalGymMap-Setup.exe release/NationalGymMap-Setup.exe.blockmap release/latest.yml release/checksums.txt --clobber
           if ($LASTEXITCODE -ne 0) { throw 'Could not upload release assets.' }
-      # The maintainer explicitly authorized publishing 1.5.2. Future versions remain drafts.
-      - name: Publish authorized 1.5.2 release
-        if: steps.version.outputs.tag == 'v1.5.2' && github.ref == 'refs/heads/main'
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release edit v1.5.2 --draft=false --latest --title "全国健身房地图 1.5.2" --notes-file docs/releases/1.5.2.md
-          if ($LASTEXITCODE -ne 0) { throw 'Could not publish the authorized release.' }

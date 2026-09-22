@@ -4,6 +4,7 @@ import gcoord from "gcoord";
 import "leaflet/dist/leaflet.css";
 import { LocateFixed, Plus, Minus, Layers, MapPin } from "lucide-react";
 import { CITIES } from "./constants";
+import { isWeb } from "./data-service.js";
 export default function MapView({
   gyms,
   selected,
@@ -64,7 +65,7 @@ export default function MapView({
     map.on("move zoom viewreset resize", reportHover);
     const base = L.layerGroup().addTo(map);
     markers.current = L.layerGroup().addTo(map);
-    fetch("./china.json")
+    fetch(`${import.meta.env.BASE_URL}china.json`)
       .then((r) => {
         if (!r.ok) throw new Error("全国离线底图加载失败");
         return r.json();
@@ -247,7 +248,7 @@ export default function MapView({
     <div className={`map-shell ${pick ? "picking" : ""}`}>
       <div className="map" ref={container} data-testid="map" />
       <div className="map-caption">
-        <span className="eyebrow">中国 · 健身足迹</span>
+        <span className="eyebrow">{isWeb ? "中国 · 健身场馆" : "中国 · 健身足迹"}</span>
         <strong>{zoom <= 5 ? "全国视野" : focus?.label || "城市视野"}</strong>
       </div>
       {pick && (
@@ -301,7 +302,7 @@ export default function MapView({
         </button>
       </div>
       <div className="map-legend">
-        <span>
+        {!isWeb && <><span>
           <i className="dot blue" />
           已去过
         </span>
@@ -309,12 +310,13 @@ export default function MapView({
           <i className="dot gray" />
           未去过
         </span>
-        <span className="legend-divider" />
+        <span className="legend-divider" /></>}
+        {isWeb && <><span><i className="dot gray" />已收录场馆</span><span className="legend-divider" /></>}
         {street ? "街道底图" : "全国离线底图"}
       </div>
       <div className="map-coordinate">
         {zoom <= 5 ? "34 个省级行政区" : `缩放级别 ${zoom}`}
-        <span>个人健身档案</span>
+        <span>{isWeb ? "共享场馆资料" : "个人健身档案"}</span>
       </div>
     </div>
   );

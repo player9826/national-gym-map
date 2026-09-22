@@ -8,6 +8,7 @@ import React, {
 import { createPortal } from "react-dom";
 import { ArrowUpRight, Dumbbell, MapPin } from "lucide-react";
 import { Picture } from "./components";
+import { isWeb } from "./data-service.js";
 
 export const gymAccent = (value) =>
   typeof value === "string" && /^#[\da-f]{3}(?:[\da-f]{3})?$/i.test(value)
@@ -41,7 +42,7 @@ export function useGymPreview(disabled) {
       closeTimer.current = setTimeout(close, 180);
   }, [close]);
   const enter = useCallback((id, source, anchor) => {
-    if (blocked.current || !anchor) return;
+    if (blocked.current || !anchor || (isWeb && !window.matchMedia("(any-hover: hover)").matches)) return;
     clearTimeout(openTimer.current);
     clearTimeout(closeTimer.current);
     trigger.current = { id, source };
@@ -252,9 +253,9 @@ export default function GymPreview({ controller, gym, count, onSelect }) {
             "城市 / 区域待补充"}
         </p>
         <div className="gym-preview-facts">
-          <span className="gym-preview-visit">
+          {!isWeb && <span className="gym-preview-visit">
             {gym.visited ? "已去过" : "未去过"}
-          </span>
+          </span>}
           <span>
             <Dumbbell size={13} />
             {count} 款器械

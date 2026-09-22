@@ -781,7 +781,8 @@
       "image": "equipment/20b5ea20-f6a8-4510-b8ec-adadf30f6fc9.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RPL-5201_Lat_Pulldown_SUEDE_matte_black_resized_b85a50df-fdbc-413b-81cd-d6a52530d739_1200x1200.png?v=1761669318",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-plate-loaded/products/rpl-5201-lat-pulldown",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT PL"
     },
     {
       "id": "59f2389f-ca31-4059-b122-23fd60d47737",
@@ -801,7 +802,8 @@
       "image": "equipment/926f91b2-4cff-4918-abf7-55a2efd5e7c8.jpg",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RPL_5203__SUEDE_1200x1200.jpg?v=1747941832",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-plate-loaded/products/rpl-5203-mid-row",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT PL"
     },
     {
       "id": "db40908b-89cd-45a3-b24c-1286b8e982d5",
@@ -821,7 +823,8 @@
       "image": "equipment/16b040e1-06a0-4b78-9769-1eba7208bdf1.jpg",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RPL_5301__SUEDE_1200x1200.jpg?v=1747941864",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-plate-loaded/products/rpl-5301-chest-press",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT PL"
     },
     {
       "id": "4759261c-c85a-4090-9018-37e7d817a39b",
@@ -841,7 +844,8 @@
       "image": "equipment/161bd092-94bf-4c8d-a2de-12395d571592.jpg",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RPL_5303__SUEDE_1200x1200.jpg?v=1747941903",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-plate-loaded/products/rpl-5303-incline-chest-press",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT PL"
     },
     {
       "id": "c484174f-bc73-4f2b-80f9-12bbf7529f99",
@@ -861,7 +865,8 @@
       "image": "equipment/f1484bf2-f3a9-4781-b739-3a3d20387946.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RS-2302_Pec_Fly__SUEDE__matte_black_resized_1200x1200.png?v=1747942962",
       "productUrl": "https://www.hoistfitness.com/collections/ccat-selectorized/products/pec-fly",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "6130c23c-e33e-4110-85c9-b104c85e3250",
@@ -3268,7 +3273,8 @@
       "image": "equipment/c4019353-55d7-4321-b3dd-2600eea97ad1.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/CL_3102_Preacher_Curl__SUEDE_1200x1200.png?v=1750324201",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-club-line/products/cl-3102-biceps-curl",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "Club Line"
     },
     {
       "id": "13727de5-b519-408a-a0d2-cb005e90a4da",
@@ -3288,7 +3294,8 @@
       "image": "equipment/97e4beb4-0f3c-426d-88fc-20e2bdd4b31d.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/CL-3103_TRICEPS_EXTENSION_-_SUEDE_1200x1200.png?v=1750325664",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-club-line/products/cl-3103-triceps-extension",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "Club Line"
     },
     {
       "id": "8efc56e9-0ae0-452c-9fdf-7081900971ea",
@@ -3308,7 +3315,8 @@
       "image": "equipment/411ea897-e900-4c93-813b-b996810c7603.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/CL-3201_Lat_Pulldown__SUEDE_1200x1200.png?v=1750326912",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-club-line/products/cl-3201-lat-pulldown",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "Club Line"
     },
     {
       "id": "417beb29-9d12-4d95-899b-4d94b0b52880",
@@ -3328,7 +3336,8 @@
       "image": "equipment/587f760d-2b32-4411-97e1-d7b26482ecc5.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/CL-3203_MID_ROW_-_SUEDE_1200x1200.png?v=1750327689",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-club-line/products/cl-3203-mid-row",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "Club Line"
     },
     {
       "id": "1a6a0c25-2083-4c97-8399-ff6a50c362ff",
@@ -3348,7 +3357,8 @@
       "image": "equipment/368970b8-c9f3-4c01-8d24-9923284c81e9.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/CL-3301_CHEST_PRESS_-_SUEDE_1200x1200.png?v=1750335709",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-club-line/products/cl-3301-chest-press",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "Club Line"
     },
     {
       "id": "2643d0eb-4a8d-47d4-a4ea-87a2b7a3d5d8",
@@ -3370,7 +3380,8 @@
       "image": "equipment/50257642-da40-42a1-848b-54e7d0f7835e.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/CL-3309_21__SUEDE_1200x1200.png?v=1750331252",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-club-line/products/cl-3309-pec-fly-rear-delt",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "Club Line"
     },
     {
       "id": "fb2ab1c9-37ef-4b47-949a-9660b01716f6",
@@ -3390,7 +3401,8 @@
       "image": "equipment/912e1eb4-a361-4e71-8c63-03c63dec9fb6.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/CL-3401_LEG_EXTENSION_SUEDE_matte_black_resized_1200x1200.png?v=1750335641",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-club-line/products/cl-3401-leg-extension",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "Club Line"
     },
     {
       "id": "12b15afc-e6cc-4c58-804c-8dd7f51d971b",
@@ -3410,7 +3422,8 @@
       "image": "equipment/5f204422-66a2-47ef-bdb6-14e16278ddad.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/CL-3402_LEG_CURL_-_SUEDE_matte_black_resized_ebc30a95-f541-4050-a381-8268de49bdcd_1200x1200.png?v=1750336486",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-club-line/products/cl-3402-leg-curl",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "Club Line"
     },
     {
       "id": "6d9f6c16-0d21-4da8-a6b6-9f1b83c54500",
@@ -3430,7 +3443,8 @@
       "image": "equipment/507e3504-94c5-4a39-b2a1-390ca43145e6.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/CL_3403_LEG_PRESS_SUEDE_matte_black_resized_1200x1200.png?v=1750405637",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-club-line/products/cl-3403-cl-3403-hs-leg-press",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "Club Line"
     },
     {
       "id": "955e6438-8e11-4799-a324-a27579b60331",
@@ -3450,7 +3464,8 @@
       "image": "equipment/8d93afd1-eeb3-4bba-959f-312bab3bd2b4.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/CL-3408_Standing_Prone_Leg_Curl__SUEDE_matte_black_resized_1200x1200.png?v=1750410279",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-club-line/products/cl-3408-standing-prone-leg-curl",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "Club Line"
     },
     {
       "id": "eda3202a-26a8-44b3-8f53-f910b97850db",
@@ -3470,7 +3485,8 @@
       "image": "equipment/bd052b5c-4d19-4e86-9661-05f1d8abc387.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/CL_3501_SHOULDER_PRESS_3_SUEDE_matte_black_resized_1200x1200.png?v=1750411965",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-club-line/products/cl-3501-shoulder-press",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "Club Line"
     },
     {
       "id": "df1703a6-494f-4417-b971-476f590400f7",
@@ -3490,7 +3506,8 @@
       "image": "equipment/f7eb6119-c47b-4bc3-999a-315b39932b47.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/CL_3502_Lateral_Raise_SUEDE_matte_black_resized_1200x1200.png?v=1750414477",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-club-line/products/cl-3502-lateral-raise",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "Club Line"
     },
     {
       "id": "934262ae-c2dc-402f-ad57-8f5a64ffc9d2",
@@ -3510,7 +3527,8 @@
       "image": "equipment/1191c03d-318a-4d01-ae1c-a4fd238670ba.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/CL_3601_Abdominals__SUEDE_matte_black_resized_1200x1200.png?v=1750415709",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-club-line/products/cl-3601-abdominals",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "Club Line"
     },
     {
       "id": "a88fe0ea-b7d2-4dfe-a04e-5616b03fc6b6",
@@ -3530,7 +3548,8 @@
       "image": "equipment/fc6d4122-1a54-4490-87b0-8bac8108f726.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/CL_3800_Inner_Outer_Thigh_SUEDE_matte_black_resized_1200x1200.png?v=1750417165",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-club-line/products/cl-3800-inner-outer-thigh",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "Club Line"
     },
     {
       "id": "f2a54fac-4585-4fbf-b0f6-ac6f59bf9ac1",
@@ -3550,7 +3569,8 @@
       "image": "equipment/df4378e4-d7ff-446e-8f3c-03fb71ac8ae8.jpg",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RPL-5601_SUEDE_1200x1200.jpg?v=1747942126",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-plate-loaded/products/rpl-5601-abdominals",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT PL"
     },
     {
       "id": "26cc087c-1195-4e95-94fc-91974d5a6535",
@@ -3570,7 +3590,8 @@
       "image": "equipment/f0309290-8cd9-40cf-90e1-eb952f1cdb86.jpg",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RPL_5501__SUEDE_1200x1200.jpg?v=1747942094",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-plate-loaded/products/rpl-5501-shoulder-press",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT PL"
     },
     {
       "id": "df88489b-f1ad-436c-b286-2aa76a687b73",
@@ -3590,7 +3611,8 @@
       "image": "equipment/1bce52db-cc8c-4972-ac09-e71b85e39060.jpg",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RPL_5405__SUEDE_1200x1200.jpg?v=1747942060",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-plate-loaded/products/rpl-5405-standing-calf-raise",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT PL"
     },
     {
       "id": "1cc9186a-c316-40a3-9692-0f7a18706721",
@@ -3610,7 +3632,8 @@
       "image": "equipment/76b7cecd-b202-4b5f-923f-befdf22cb13b.jpg",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RPL_5403__SUEDE_1200x1200.jpg?v=1747942022",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-plate-loaded/products/rpl-5403-dual-action-leg-press",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT PL"
     },
     {
       "id": "3b3e8be1-69ce-4d15-82bd-90f58b6c7b81",
@@ -3630,7 +3653,8 @@
       "image": "equipment/6ed86831-3601-4926-87d8-b2fd9457d683.jpg",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RPL_5363__SUEDE_1200x1200.jpg?v=1747941984",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-plate-loaded/products/rpl-5363-seated-calf-raise",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT PL"
     },
     {
       "id": "bc72ff37-5549-4a5d-822f-e86ca78971f5",
@@ -3650,7 +3674,8 @@
       "image": "equipment/b1f3e187-454e-4c2f-9bf5-ce5ab0a0159e.jpg",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RPL-5356__SUEDE_1200x1200.jpg?v=1747942167",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-plate-loaded/products/rpl-5356-hack-squat-dead-lift-shrug",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT PL"
     },
     {
       "id": "4097e5ac-ae4f-4091-9a32-61bf03162b24",
@@ -3670,7 +3695,8 @@
       "image": "equipment/779229f5-e119-4df7-a3bc-5d6f0ad851b4.jpg",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RPL_5305__SUEDE_1200x1200.jpg?v=1747941937",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-plate-loaded/products/rpl-5305-decline-chest-press",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT PL"
     },
     {
       "id": "5baa330b-65c7-4286-a759-cb9cba2c3ff5",
@@ -3690,7 +3716,8 @@
       "image": "equipment/2e564179-ea2d-4872-8ad6-4e00cd287a70.jpg",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RPL-5102__SUEDE_1200x1200.jpg?v=1747941747",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-plate-loaded/products/rpl-5102-biceps-curl",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT PL"
     },
     {
       "id": "d0294036-29a6-4de3-8472-705378afa12f",
@@ -3710,7 +3737,8 @@
       "image": "equipment/3fc3f424-7857-4c23-9393-e2405b4d7106.jpg",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RPL-5101__SUEDE_1200x1200.jpg?v=1747941718",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-plate-loaded/products/rpl-5101-seated-dip",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT PL"
     },
     {
       "id": "1353ceae-a1a0-4b7b-99c6-c37cce9341ba",
@@ -3730,7 +3758,8 @@
       "image": "equipment/dc6f3f42-99d7-4146-998d-0be859144df4.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RS-1103_Triceps_Extension_SUEDE_matte_black_resized_1200x1200.png?v=1747942694",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/rs-1103-triceps-extension",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "a1166df7-2479-4799-ad57-64847a16a2ac",
@@ -3750,7 +3779,8 @@
       "image": "equipment/f3542a2b-5463-4427-b4a4-0cd9922ed6c0.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RS-1502_Lateral_Raise_SUEDE_matte_black_resized_1200x1200.png?v=1747942725",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/rs-1502-lateral-raise",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "53ed8416-27bc-4bb1-b459-13f21c4b65ca",
@@ -3772,7 +3802,8 @@
       "image": "equipment/471f3632-2f57-4f59-86a8-cf5ae528823b.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RS-2101_Seated_Dip_SUEDE_matte_black_resized_1200x1200.png?v=1747942758",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/seated-dip",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "957f46ac-3f0e-4e8f-b154-b7d021812496",
@@ -3792,7 +3823,8 @@
       "image": "equipment/ea9cbf5c-9003-4b3d-a886-9408ba9759f0.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RS-2102_Bicep_Curl__SUEDE__matte_black_resized_1200x1200.png?v=1747942792",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/biceps-curl",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "39da90f0-8943-4932-ab82-a48320c3fd12",
@@ -3812,7 +3844,8 @@
       "image": "equipment/2961e5ca-6609-4687-bcf8-2e1745e5ef81.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RS-2201_ANGLE__SUEDE_matte_black_resized_1200x1200.png?v=1747942838",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/rs-2201-lat-pulldown",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "ef8066fd-dd1d-4c44-82a4-0958a422f69d",
@@ -3832,7 +3865,8 @@
       "image": "equipment/d9e94673-ac68-4701-b9f4-2c3e066bc211.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RS-2203__SUEDE_matte_black_resized_1200x1200.png?v=1747942873",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/seated-mid-row",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "88edaf51-c461-4998-81e8-025377ffa26c",
@@ -3852,7 +3886,8 @@
       "image": "equipment/f17ba32f-c8b1-448c-bde7-a93d727bd943.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RS-2204_LOW_BACK__SUEDE_matte_black_resized_1200x1200.png?v=1747942903",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/low-back",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "c70fa8e5-47c6-4b41-a4b2-c19f779095f6",
@@ -3872,7 +3907,8 @@
       "image": "equipment/e2159b1b-edff-4b9e-9b34-5818c99d525b.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RS-2301__SUEDE_matte_black_resized_1200x1200.png?v=1747942934",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/rs-2301-chest-press",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "2516a507-1fe8-4966-b843-3c3ea2000d2b",
@@ -3892,7 +3928,8 @@
       "image": "equipment/47f8d32d-5894-4ad3-aded-f432c80a7c78.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/2401_ANGLE_SUEDE_matte_black_resized_1200x1200.png?v=1747942995",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/rs-2401-leg-extension",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "a20a7049-df16-410c-96b5-71bea0630d36",
@@ -3912,7 +3949,8 @@
       "image": "equipment/1defd535-5e1a-4571-8862-714e686ed7ff.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/2402_ANGLE__SUEDE_matte_black_resized_1200x1200.png?v=1747943062",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/rs-2402-leg-curl",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "92b2dad6-b6ea-41b4-835d-93b4557b0ee4",
@@ -3932,7 +3970,8 @@
       "image": "equipment/9b7273ae-69b6-4657-8190-4ce9b1a354a7.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RS-2403_ANGLE__SUEDE_matte_black_resized_1200x1200.png?v=1747943096",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/rs-2403-leg-press",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "fc5865a8-7ca8-44a9-a710-3892802adff2",
@@ -3952,7 +3991,8 @@
       "image": "equipment/858dd4fe-5eb5-438c-bf08-c3dd206de2e1.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RS-2406__SUEDE_matte_black_resized_1200x1200.png?v=1747943133",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/inner-thigh",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "0507b8b5-9896-41a7-a49a-75529447ee45",
@@ -3972,7 +4012,8 @@
       "image": "equipment/c3313b08-282b-4467-8800-d1e90134296e.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RS-2407_ANGLE__SUEDE_matte_black_resized_1200x1200.png?v=1747943165",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/outer-thigh",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "977c8134-38a7-456a-afc1-e3d2a2cd3f9e",
@@ -3992,7 +4033,8 @@
       "image": "equipment/d2586d75-9ec0-4c53-b7cb-011f2d482f89.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RS-2408__ANGLE_1___SUEDE_matte_black_resized_1200x1200.png?v=1747943211",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/rs-2408-prone-leg-curl",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "f02d7120-9a12-49dc-8a9f-11ceaa2f4bb7",
@@ -4013,7 +4055,8 @@
       "image": "equipment/c80b3cda-c230-4544-b605-5485d1471b3c.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RS-2412___SUEDE_matte_black_resized_1200x1200.png?v=1747943247",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/glute-master",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "15e1b5f8-f8e0-41d8-b53c-b5e5bc570093",
@@ -4033,7 +4076,8 @@
       "image": "equipment/ab0e487f-2649-452d-8cba-d4826c10ed15.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RS-2415__SUEDE_matte_black_resized_1200x1200.png?v=1747943294",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/rotary-calf",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "3c81bee5-a891-41dd-a5f5-d51685f9d815",
@@ -4053,7 +4097,8 @@
       "image": "equipment/cef35aee-fce8-4a58-82f7-b8cc686897b4.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RS-2501___SUEDE_matte_black_resized_1200x1200.png?v=1747943331",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/shoulder-press",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "a9396143-d7bf-401e-8e46-a5af549bd520",
@@ -4073,7 +4118,8 @@
       "image": "equipment/0e66077f-28c0-460e-b546-4b89ba020aa3.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RS-2601__SUEDE_matte_black_resized_1200x1200.png?v=1747943362",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/rs-2601-abdominals",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "cd07828b-2f76-43e2-bcf4-bc9bb11a71e1",
@@ -4093,7 +4139,8 @@
       "image": "equipment/59aa6bb2-878f-4452-9f23-2ef3d9bcce38.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RS-2602_ANGLE__SUEDE_matte_black_resized_1200x1200.png?v=1747943394",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/rs-2602-rotary-torso",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "2ff80948-b48d-4111-b908-e4579206c7ff",
@@ -4117,7 +4164,8 @@
       "image": "equipment/8bb5169d-14c7-4ecd-a38c-b3984e53e4d9.png",
       "imageSource": "http://cdn.shopify.com/s/files/1/0057/5599/4225/files/RS-2700_ANGLE__matte_black_resized_1200x1200.png?v=1747943431",
       "productUrl": "https://www.hoistfitness.com/collections/cpl-roc-it-selectorized/products/rs-2700-chin-dip-assist",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "ROC-IT S"
     },
     {
       "id": "f610e7ae-9d9b-409d-a771-0db1fe351740",
@@ -6025,7 +6073,8 @@
       "image": "equipment/e952073b-bdf8-43aa-bc9d-301167ee5c2e.webp",
       "imageSource": "https://www.panattasport.com/wp-content/uploads/2026/09/B0048974-scaled.webp",
       "productUrl": "https://www.panattasport.com/en/freeweight-one/abdominal-crunch-2/",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "be2089db-c09c-4c43-baf4-e53d70bdaaa5",
@@ -6045,7 +6094,8 @@
       "image": "equipment/eca65712-034e-444a-bf7f-4ac0f6be0c72.webp",
       "imageSource": "https://www.panattasport.com/wp-content/uploads/2026/09/PAR00337-scaled.webp",
       "productUrl": "https://www.panattasport.com/en/freeweight-one/declined-chest-press/",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "38c7317b-8036-46d3-97be-58051fab0dfd",
@@ -10384,7 +10434,8 @@
       "image": "equipment/24b35135-5137-4e6a-8a91-f86baf82b55e.webp",
       "imageSource": "https://www.panattasport.com/wp-content/uploads/2026/04/1FW551-1.webp",
       "productUrl": "https://www.panattasport.com/en/free-weight-special/four-angle-biceps-machines/",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight Special"
     },
     {
       "id": "4cd29780-b5f4-4ddd-b7cd-5c911c741381",
@@ -10404,7 +10455,8 @@
       "image": "equipment/7bd861df-e076-4b01-92a0-d9ddfe043293.webp",
       "imageSource": "https://www.panattasport.com/wp-content/uploads/2026/04/1FW079-1.webp",
       "productUrl": "https://www.panattasport.com/en/free-weight-special/super-lunge-machine/",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight Special"
     },
     {
       "id": "400f498b-6f72-4f8b-af35-f404bab49ccc",
@@ -10426,7 +10478,8 @@
       "image": "equipment/6939ed00-21fc-47cb-9de3-d2215737ddd9.webp",
       "imageSource": "https://www.panattasport.com/wp-content/uploads/2026/04/1FO140-1.webp",
       "productUrl": "https://www.panattasport.com/en/freeweight-one/dips-press/",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "98145aa9-4737-478c-b780-fa3cb46ca814",
@@ -10448,7 +10501,8 @@
       "image": "equipment/ea33746c-3ba2-45aa-89de-43889c3a4d7b.webp",
       "imageSource": "https://www.panattasport.com/wp-content/uploads/2026/04/1FO120-4.webp",
       "productUrl": "https://www.panattasport.com/en/freeweight-one/power-smith-machine-4-angles/",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "ea1c6e6a-e64a-4e1f-b842-207ca2f08203",
@@ -10468,7 +10522,8 @@
       "image": "equipment/54aeb26e-714d-4f19-a357-71bde724041c.webp",
       "imageSource": "https://www.panattasport.com/wp-content/uploads/2026/04/1FO091-1.webp",
       "productUrl": "https://www.panattasport.com/en/freeweight-one/squat-machine-and-calf/",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "178133ae-4dde-4b8a-a174-f66e2c44f2c5",
@@ -10488,7 +10543,8 @@
       "image": "equipment/c79f54ed-f858-49bc-ac25-c1fcef541636.webp",
       "imageSource": "https://www.panattasport.com/wp-content/uploads/2026/04/1FO088-1.webp",
       "productUrl": "https://www.panattasport.com/en/freeweight-one/seated-calf/",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "76e2e5a5-5e08-4533-8bb6-89288a100b5c",
@@ -10508,7 +10564,8 @@
       "image": "equipment/cc8c1053-bf1a-458e-9269-441107ba1ff0.webp",
       "imageSource": "https://www.panattasport.com/wp-content/uploads/2026/04/1FO087-1.webp",
       "productUrl": "https://www.panattasport.com/en/freeweight-one/hack-squat/",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "1b71be30-823f-402a-998b-baf5167cbccc",
@@ -10528,7 +10585,8 @@
       "image": "equipment/c7db7a61-cf42-4b65-8413-1b7527a3ba39.webp",
       "imageSource": "https://www.panattasport.com/wp-content/uploads/2026/04/1FO029-1.webp",
       "productUrl": "https://www.panattasport.com/en/freeweight-one/viking-press/",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "8efa823d-4051-44ac-85d9-18121886641f",
@@ -10548,7 +10606,8 @@
       "image": "equipment/185438b0-2f41-49b9-9b78-7a7d34e3570c.webp",
       "imageSource": "https://www.panattasport.com/wp-content/uploads/2026/04/1FO005-1.webp",
       "productUrl": "https://www.panattasport.com/en/freeweight-one/dorsy-bar/",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "e617f9c3-e509-4875-9bfb-d721ee751e64",
@@ -10568,7 +10627,8 @@
       "image": "equipment/847ecef0-61ec-410d-b065-2d6efc52dd77.webp",
       "imageSource": "https://www.panattasport.com/wp-content/uploads/2025/07/1FO094-1.webp",
       "productUrl": "https://www.panattasport.com/en/freeweight-one/kneeling-leg-curling/",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "b4240b28-a0e3-4dbc-b8b9-a1316f748763",
@@ -10588,7 +10648,8 @@
       "image": "equipment/6104cb3b-4858-4d71-8f74-6cb501f7db58.webp",
       "imageSource": "https://www.panattasport.com/wp-content/uploads/2025/07/1FO043-1.webp",
       "productUrl": "https://www.panattasport.com/en/freeweight-one/super-middle-chest-flight-machine/",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "dc798ce7-5390-4f53-83cd-6dee428f5cfd",
@@ -10608,7 +10669,8 @@
       "image": "equipment/c3297bd4-13b4-44c1-b495-eaafa31eae9c.webp",
       "imageSource": "https://www.panattasport.com/wp-content/uploads/2025/07/1FO039-1.webp",
       "productUrl": "https://www.panattasport.com/en/freeweight-one/pullover-machine/",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "7ac12fad-2227-46d0-85e3-da19a545e0dd",
@@ -10628,7 +10690,8 @@
       "image": "equipment/f449578b-8be3-4e47-beaf-13f2f699877d.png",
       "imageSource": "",
       "productUrl": "https://www.panattasport.com/en/free-weight-special/power-smith-machine-dual-system/",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight Special"
     },
     {
       "id": "188cc00a-4c40-4c06-a571-ed98866696e0",
@@ -10651,7 +10714,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/adjustable-row-45/",
       "sourceDate": "2026-09-10T07:12:26.919Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "b781150b-e1e8-4ec2-9ef7-691547f8127c",
@@ -10674,7 +10738,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/standing-hip-thrust/",
       "sourceDate": "2026-09-10T07:12:54.607Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "d2a9fa9b-15b9-4ff2-9736-cfef11f20919",
@@ -10697,7 +10762,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/free-weight-special/alternate-leg-extension/",
       "sourceDate": "2026-09-10T07:14:12.220Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight Special"
     },
     {
       "id": "0888d47f-872a-4d9b-99b1-d0ca98350cfd",
@@ -10720,7 +10786,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/lat-pulldown-circular/",
       "sourceDate": "2026-09-10T07:14:49.938Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "138e3081-6fdc-451e-82b1-fa192b78ceba",
@@ -10743,7 +10810,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/hip-thrust/",
       "sourceDate": "2026-09-10T07:15:21.566Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "c9912f06-305f-40e1-8c1e-a1d521ad8164",
@@ -10766,7 +10834,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/leg-press-bridge/",
       "sourceDate": "2026-09-10T07:15:51.706Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "cf672623-028e-462e-a8ef-21dd6091be3e",
@@ -10835,7 +10904,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-special/alternate-arm-curl-45/",
       "sourceDate": "2026-09-10T07:40:41.964Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight Special"
     },
     {
       "id": "2e81b30e-5c3f-452f-958d-2f12660c6728",
@@ -10858,7 +10928,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/alternate-arm-curl-120/",
       "sourceDate": "2026-09-10T07:41:04.189Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight Special"
     },
     {
       "id": "69d5d6b5-2d2b-4a4a-8f9a-3bea9f40add3",
@@ -10881,7 +10952,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/alternate-preacher-curl-machine/",
       "sourceDate": "2026-09-10T07:41:34.115Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight Special"
     },
     {
       "id": "5ff294d2-a89c-43bd-b8cf-2aa7a9743aad",
@@ -11088,7 +11160,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/lat-machine-convergent/",
       "sourceDate": "2026-09-10T08:02:10.643Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "785f98d6-34c6-4cb0-9e22-358d33c09612",
@@ -11111,7 +11184,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/rowing-machine/",
       "sourceDate": "2026-09-10T08:08:10.236Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "532657bf-a544-4577-a657-53c7624e2468",
@@ -11134,7 +11208,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/low-row/",
       "sourceDate": "2026-09-10T08:08:28.777Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "122cd5cb-3ea9-4816-b4ce-32b7d3a325f1",
@@ -11157,7 +11232,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/power-row/",
       "sourceDate": "2026-09-10T08:08:49.404Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "6b58cc9d-70ba-4fd6-9894-9f414280e3d8",
@@ -11180,7 +11256,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/free-weight-special/high-row/",
       "sourceDate": "2026-09-10T08:09:08.227Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "911cff90-9330-4ef6-a596-bf91191c81fb",
@@ -11203,7 +11280,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/shrug-machine/",
       "sourceDate": "2026-09-10T08:10:36.813Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "cbdc1490-40bd-4926-9bf8-37b751250937",
@@ -11226,7 +11304,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/deltoid-press/",
       "sourceDate": "2026-09-10T08:11:25.254Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "bf8f07d6-abfc-4791-8342-7cb348fb34b1",
@@ -11249,7 +11328,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/lateral-deltoids/",
       "sourceDate": "2026-09-10T08:11:53.947Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "9a1cc5f6-abaa-4a18-872c-37764b9426f2",
@@ -11272,7 +11352,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/back-deltoids/",
       "sourceDate": "2026-09-10T08:12:10.498Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "94fbcfee-0f50-4365-ba55-7ae63340e346",
@@ -11295,7 +11376,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/vertical-chest-press/",
       "sourceDate": "2026-09-10T08:12:24.987Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "aa5e33aa-b694-4348-b559-561da684412f",
@@ -11318,7 +11400,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/inclined-chest-press/",
       "sourceDate": "2026-09-10T08:12:45.883Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "67a4885d-aa2d-4fc8-8810-465a347f5a13",
@@ -11341,7 +11424,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/curling-machine/",
       "sourceDate": "2026-09-10T08:13:00.309Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "da2e0021-1601-4645-a545-4a0e3db19936",
@@ -11364,7 +11448,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/french-press-machine/",
       "sourceDate": "2026-09-10T08:13:22.898Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "1cffe837-3128-4a65-85d5-3d9694bb22e4",
@@ -11387,7 +11472,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/leg-press-45/",
       "sourceDate": "2026-09-10T08:13:52.147Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "652d8f27-bb4e-4cad-a049-e1d7bc4fad9d",
@@ -11410,7 +11496,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/pendulum-squat/",
       "sourceDate": "2026-09-10T08:14:09.136Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "35e380fc-616f-4c68-9af1-37da72b706cf",
@@ -11433,7 +11520,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/leg-extension/",
       "sourceDate": "2026-09-10T08:14:24.713Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "7d1ecdfc-a5f1-44d6-8676-ea1835f56175",
@@ -11456,7 +11544,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/freeweight-one/seated-leg-curling/",
       "sourceDate": "2026-09-10T08:15:28.600Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight One"
     },
     {
       "id": "c2f6aca7-2b0c-4e29-bec4-ca6c46a223e0",
@@ -11479,7 +11568,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/free-weight-special/3d-abductor/",
       "sourceDate": "2026-09-10T08:15:49.298Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight Special"
     },
     {
       "id": "90575b05-9034-4a1f-a7aa-125e4ccc5033",
@@ -11504,7 +11594,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/free-weight-special/power-smith-dual-system-upper/",
       "sourceDate": "2026-09-10T08:16:10.135Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight Special"
     },
     {
       "id": "680b620d-fb83-4a80-b364-42e602b0abd8",
@@ -11527,7 +11618,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/free-weight-special/total-core-crunch-machine/",
       "sourceDate": "2026-09-10T08:16:33.297Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight Special"
     },
     {
       "id": "00904b56-26d0-4207-9711-6b1217ecb4ec",
@@ -11552,7 +11644,8 @@
       "sourceType": "official_web",
       "sourceUrl": "https://www.panattasport.com/en/prodotto/super-vertical-multi-press/",
       "sourceDate": "2026-09-10T08:16:50.139Z",
-      "verificationStatus": "needs_review"
+      "verificationStatus": "needs_review",
+      "series": "FreeWeight Special"
     },
     {
       "id": "05951325-f893-421a-8741-b2a0cd8f7b74",

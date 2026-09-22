@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { asset } from "./constants";
+import { isWeb } from "./data-service.js";
 import builtInLogos from "../public/brand-logos/index.json";
 import logoSources from "../public/brand-logos/sources.json";
 
@@ -16,7 +17,7 @@ export default function BrandLogo({ brand, className = "" }) {
   const background = bundled && src === `${import.meta.env.BASE_URL}${bundled}` ? backgrounds[name.trim().toUpperCase()] : undefined;
   return (
     <span className={`brand-logo ${className}`} title={name}>
-      {src ? <img src={src} alt={name} style={background ? { backgroundColor: background } : undefined} onError={() => setFailed((previous) => [...previous, src])} />
+      {src ? <img src={src} alt={name} loading={isWeb ? "lazy" : undefined} decoding={isWeb ? "async" : undefined} style={background ? { backgroundColor: background } : undefined} onError={() => setFailed((previous) => [...previous, src])} />
         : <span className="brand-logo-fallback">{name}</span>}
     </span>
   );

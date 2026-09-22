@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { X, LoaderCircle, ImagePlus, Dumbbell, MapPin } from "lucide-react";
 import { asset, PARTS, PART_TAGS, partName, tagLabel, isCustomPart } from "./constants";
 import { createPortal } from "react-dom";
+import { isWeb } from "./data-service.js";
 const modalStack = [];
 function syncModals() {
   modalStack.forEach((node, i) => {
@@ -13,6 +14,7 @@ function syncModals() {
   });
   const root = document.getElementById("root");
   if (root) root.inert = modalStack.length > 0;
+  if (isWeb) document.body.classList.toggle("web-modal-open", modalStack.length > 0);
 }
 export function IconButton({ icon: Icon, label, ...props }) {
   return (
@@ -85,7 +87,7 @@ export function Modal({
   }
   return createPortal(
     <div
-      className="modal-backdrop"
+      className={`modal-backdrop${isWeb ? " web-modal-backdrop" : ""}`}
       onClick={(e) => {
         if (e.target === e.currentTarget && modalStack.at(-1) === ref.current) {
           e.stopPropagation();
@@ -175,15 +177,19 @@ export function Status({ visited, onChange, disabled }) {
     </div>
   );
 }
-export function Picture({ src, alt, type = "equipment", className = "" }) {
-  const [broken, setBroken] = useState(false);
-  useEffect(() => setBroken(false), [src]);
-  return src && !broken ? (
+export function Picture({ src, alt, type = "equipment", className = "", thumbnail = true }) {
+  const [failed, setFailed] = useState([]);
+  useEffect(() => setFailed([]), [src]);
+  const candidates = src ? [asset(src, { thumbnail: isWeb && thumbnail }), asset(src)] : [];
+  const image = candidates.find((candidate) => !failed.includes(candidate));
+  return image ? (
     <img
       className={`picture ${className}`}
-      src={asset(src)}
+      src={image}
       alt={alt}
-      onError={() => setBroken(true)}
+      loading={isWeb ? "lazy" : undefined}
+      decoding={isWeb ? "async" : undefined}
+      onError={() => setFailed((previous) => [...previous, image])}
     />
   ) : (
     <div className={`image-placeholder ${className}`}>
@@ -192,7 +198,7 @@ export function Picture({ src, alt, type = "equipment", className = "" }) {
       ) : (
         <MapPin size={32} strokeWidth={1.2} />
       )}
-      <span>{broken ? "照片读取失败" : "暂无照片"}</span>
+      <span>{src ? "照片读取失败" : "暂无照片"}</span>
     </div>
   );
 }

@@ -4,6 +4,8 @@
 
 ## 运行链路
 
+网页模式通过 `src/data-service.js` 加载带完整性校验的公开快照；桌面模式保留主进程调用。`src/web-route.js` 保存详情地址，`src/web.css` 限定网页和手机样式。`scripts/build-web.cjs` 从 `shared/` 白名单生成 `dist-web/`，重新编码图片并生成内容寻址文件名；`.github/workflows/pages.yml` 独立测试和发布网站。详见 `docs/web.md`。
+
 `electron/main.cjs` 创建桌面窗口、处理数据目录与本地资源，执行升级前备份；`electron/preload.cjs` 向界面提供受控调用；`src/App.jsx` 组织页面与弹窗，通过 `window.desktop.call` 调用主进程业务。
 
 | 任务 | 优先检查的文件 |

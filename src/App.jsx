@@ -33,6 +33,8 @@ import EquipmentFilters from "./EquipmentFilters";
 import {matchesEquipment, partOptions} from "./equipment-filtering";
 import BatchImport from "./BatchImport";
 import "./equipment-classification.css";
+import { isWeb, loadSnapshot, openExternal } from "./data-service";
+import { readRoute, routeHash } from "./web-route";
 import {
   IconButton,
   Modal,
@@ -66,21 +68,22 @@ import {
 
 const empty = { gyms: [], equipment: [], brands: [], links: [], settings: {} };
 export default function App() {
+  const [initialRoute] = useState(() => isWeb ? readRoute(location.hash) : { page: "map" });
   const [db, setDb] = useState(empty),
-    [status, setStatus] = useState({}),
-    [page, setPage] = useState("map");
+    [status, setStatus] = useState({ loading: isWeb }),
+    [page, setPage] = useState(initialRoute.page);
   const [modal, setModal] = useState(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [toast, setToast] = useState(""),
     [confirm, setConfirm] = useState(null);
-  const [selected, setSelected] = useState(null),
-    [equipmentId, setEquipmentId] = useState(null),
+  const [selected, setSelected] = useState(initialRoute.gym || null),
+    [equipmentId, setEquipmentId] = useState(initialRoute.equipment || null),
     [query, setQuery] = useState(""),
     [visitFilter, setVisitFilter] = useState("all"),
     [city, setCity] = useState(""),
     [tag, setTag] = useState(""),
-    [sort, setSort] = useState("updated"),
+    [sort, setSort] = useState(isWeb ? "name" : "updated"),
     [filters, setFilters] = useState(false),
     [focus, setFocus] = useState(null),
     [pickDraft, setPickDraft] = useState(null);
@@ -98,6 +101,29 @@ export default function App() {
     [linkedFilters, setLinkedFilters] = useState({}),
     [backTop, setBackTop] = useState(false);
   const equipmentScroll = useRef(null);
+  const [routeInvalid, setRouteInvalid] = useState(!!initialRoute.invalid);
+  useEffect(() => {
+    if (!isWeb) return;
+    const navigate = () => {
+      const route = readRoute(location.hash);
+      setPage(route.page); setSelected(route.gym || null); setEquipmentId(route.equipment || null);
+      setRouteInvalid(!!route.invalid); setModal(null);
+    };
+    window.addEventListener("popstate", navigate);
+    window.addEventListener("hashchange", navigate);
+    return () => {
+      window.removeEventListener("popstate", navigate);
+      window.removeEventListener("hashchange", navigate);
+    };
+  }, []);
+  useEffect(() => {
+    if (!isWeb || routeInvalid) return;
+    const hash = routeHash({ page, gym: selected, equipment: equipmentId });
+    if (location.hash !== hash) {
+      if (!location.hash) history.replaceState(null, "", hash);
+      else history.pushState(null, "", hash);
+    }
+  }, [page, selected, equipmentId, routeInvalid]);
   useEffect(() => { setLinkedFilters({}); }, [selected]);
   useEffect(() => { setBackTop(false); }, [page]);
   const running = useRef(false),
@@ -108,14 +134,15 @@ export default function App() {
     notification.current = setTimeout(() => setToast(""), 6500);
   }
   async function refresh() {
-    if (!window.desktop) {
-      setStatus({ ready: false, browser: true });
-      return;
+    if (isWeb) setStatus((s) => ({ ...s, loading: true, error: "" }));
+    try {
+      const result = await loadSnapshot();
+      setDb(result.db || empty);
+      setStatus(result.status);
+    } catch (e) {
+      if (!isWeb) throw e;
+      setStatus((s) => ({ ...s, loading: false, error: e.message }));
     }
-    const s = await window.desktop.call("status");
-    setStatus(s);
-    if (s.ready) setDb(await window.desktop.call("state"));
-    else setDb(empty);
   }
   async function run(task, message) {
     if (running.current) return;
@@ -137,6 +164,7 @@ export default function App() {
     return () => clearTimeout(notification.current);
   }, []);
   function requireData(action) {
+    if (isWeb) return;
     if (!status.ready) {
       setModal({ type: "settings" });
       if (status.browser) setError("请使用已安装的桌面程序管理本地数据。");
@@ -147,6 +175,20 @@ export default function App() {
   }
   const gym = db.gyms.find((g) => g.id === selected),
     eq = db.equipment.find((e) => e.id === equipmentId);
+  const missingRoute = isWeb && status.ready && (routeInvalid || (selected && !gym) || (equipmentId && !eq));
+  useEffect(() => {
+    if (isWeb) document.title = `${eq?.name || gym?.name || (page === "equipment" ? "器械图鉴" : "探索场馆")} · 全国健身房地图`;
+  }, [page, eq?.name, gym?.name]);
+  async function share() {
+    const url = location.href;
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("clipboard unavailable");
+      await navigator.clipboard.writeText(url);
+      notice("链接已复制，可以分享给朋友");
+    } catch {
+      setModal({ type: "share", url });
+    }
+  }
   const hover = useGymPreview(
     page !== "map" ||
       !!gym ||
@@ -165,7 +207,7 @@ export default function App() {
             `${g.name} ${g.province} ${g.city} ${g.district} ${g.address} ${g.tags?.join(" ")}`
               .toLowerCase()
               .includes(query.toLowerCase()) &&
-            (!city || g.city.replace(/市$/, "") === city.replace(/市$/, "")) &&
+            (!city || (g.city || "").replace(/市$/, "") === city.replace(/市$/, "")) &&
             (visitFilter === "all" ||
               g.visited === (visitFilter === "visited")) &&
             (!tag || g.tags?.includes(tag)),
@@ -209,6 +251,7 @@ export default function App() {
   function showGym(id) {
     hover.close();
     if (!db.gyms.some((g) => g.id === id)) return;
+    if (isWeb) setRouteInvalid(false);
     setEquipmentId(null);
     setSelected(id);
   }
@@ -275,6 +318,7 @@ export default function App() {
               <button
                 key={id}
                 onClick={() => {
+                  if (isWeb) setRouteInvalid(false);
                   setSelected(null);
                   setPage("equipment");
                   setEqType("");
@@ -299,7 +343,7 @@ export default function App() {
     );
   }
   return (
-    <div className="app">
+    <div className={`app${isWeb ? " web-app" : ""}`}>
       <header className="app-header">
         <div className="brand">
           <div className="brand-symbol">
@@ -307,13 +351,13 @@ export default function App() {
           </div>
           <div>
             <h1>全国健身房地图</h1>
-            <span>我的训练足迹</span>
+            <span>{isWeb ? "探索场馆与器械" : "我的训练足迹"}</span>
           </div>
         </div>
         <nav className="main-nav" aria-label="主导航">
           <button
             className={page === "map" ? "active" : ""}
-            onClick={() => setPage("map")}
+            onClick={() => { setPage("map"); if (isWeb) { setSelected(null); setEquipmentId(null); setRouteInvalid(false); } }}
           >
             <Map size={18} />
             健身房地图
@@ -323,6 +367,7 @@ export default function App() {
             onClick={() => {
               setPage("equipment");
               setPickDraft(null);
+              if (isWeb) { setSelected(null); setEquipmentId(null); setRouteInvalid(false); }
             }}
           >
             <Dumbbell size={19} />
@@ -332,16 +377,22 @@ export default function App() {
         <div className="header-end">
           <span className={`storage-state ${status.ready ? "" : "unready"}`}>
             <i />
-            {status.ready ? "本地档案" : "数据未就绪"}
+            {status.ready ? (isWeb ? "公开资料" : "本地档案") : (status.loading ? "正在加载" : "数据未就绪")}
           </span>
-          <IconButton
+          {!isWeb && <IconButton
             icon={Settings2}
             label="数据与设置"
             onClick={() => setModal({ type: "settings" })}
-          />
+          />}
+          {isWeb && <button className="text-button" disabled={status.loading} onClick={() => run(refresh)}>更新资料</button>}
         </div>
       </header>
-      {(!status.ready || status.error) && (
+      {isWeb && (status.loading || status.error) && <div className="setup-banner" role={status.error ? "alert" : "status"}>
+        <span>{status.error || "正在加载公开场馆与器械资料…"}</span>
+        {status.error && <button onClick={refresh}>重新加载</button>}
+      </div>}
+      {missingRoute && <div className="setup-banner" role="alert"><span>这条资料不存在或已撤下。</span><button onClick={() => { setSelected(null); setEquipmentId(null); setRouteInvalid(false); }}>返回浏览</button></div>}
+      {!isWeb && (!status.ready || status.error) && (
         <div className="setup-banner">
           <FolderOpen size={18} />
           <span>
@@ -361,20 +412,24 @@ export default function App() {
         <aside className="gym-sidebar">
           <div className="sidebar-heading">
             <div>
-              <span className="eyebrow">我的场馆</span>
+              <span className="eyebrow">{isWeb ? "发现下一站" : "我的场馆"}</span>
               <h2>
                 健身房档案<span>{db.gyms.length}</span>
               </h2>
             </div>
-            <IconButton
+            {!isWeb && <IconButton
               icon={Plus}
               label="新增健身房"
               onClick={() =>
                 requireData(() => setModal({ type: "gym", row: emptyGym() }))
               }
-            />
+            />}
           </div>
-          <div className="stats">
+          {isWeb ? <div className="stats">
+            <div><strong>{db.gyms.length}</strong><span>收录场馆</span></div>
+            <div><strong>{new Set(db.gyms.map(g => g.city).filter(Boolean)).size}</strong><span>覆盖城市</span></div>
+            <div><strong>{db.equipment.length}</strong><span>器械档案</span></div>
+          </div> : <div className="stats">
             <div>
               <strong>
                 {db.gyms
@@ -409,7 +464,7 @@ export default function App() {
               </strong>
               <span>到访城市</span>
             </div>
-          </div>
+          </div>}
           <div className="gym-search">
             <div className="search-input">
               <Search size={17} />
@@ -445,7 +500,7 @@ export default function App() {
                 onClick={() => setFilters(!filters)}
               />
             </div>
-            <div className="segmented filter-status">
+            {!isWeb && <div className="segmented filter-status">
               {[
                 ["all", "全部"],
                 ["visited", "已去过"],
@@ -459,7 +514,7 @@ export default function App() {
                   {label}
                 </button>
               ))}
-            </div>
+            </div>}
             {filters && (
               <div className="extra-filters">
                 <select
@@ -493,9 +548,9 @@ export default function App() {
               value={sort}
               onChange={(e) => setSort(e.target.value)}
             >
-              <option value="updated">最近更新</option>
+              {!isWeb && <option value="updated">最近更新</option>}
               <option value="name">名称排序</option>
-              <option value="score">评分排序</option>
+              {!isWeb && <option value="score">评分排序</option>}
             </select>
           </div>
           <div className="gym-list">
@@ -522,23 +577,23 @@ export default function App() {
                     <MapPin size={13} />
                     {[g.city, g.district].filter(Boolean).join(" / ") ||
                       "位置待补充"}
-                    <span className="score">{g.score ?? "待评分"}</span>
+                    {!isWeb && <span className="score">{g.score ?? "待评分"}</span>}
                   </p>
-                  <p className="one-line">{g.description || "暂无简介"}</p>
+                  <p className="one-line">{isWeb ? (g.address || "地址待补充") : (g.description || "暂无简介")}</p>
                 </button>
                 <div className="parallel-tags">
                   <Tags values={(g.tags || []).slice(0, 3)} />
                   {brandTags(g)}
                 </div>
                 <div className="gym-item-foot">
-                  <button
+                  {!isWeb && <button
                     className={`visit-pill ${g.visited ? "visited" : ""}`}
                     disabled={busy}
                     onClick={() => run(() => changeVisit(g, !g.visited))}
                   >
                     <i className={`dot ${g.visited ? "blue" : "gray"}`} />
                     {g.visited ? "已去过" : "未去过"}
-                  </button>
+                  </button>}
                   <span>
                     <Dumbbell size={13} />
                     {db.links.filter((l) => l.gymId === g.id).length} 款器械
@@ -548,7 +603,7 @@ export default function App() {
                   <button
                     className="text-button review-inline"
                     onClick={() =>
-                      run(() => window.desktop.call("external", g.reviewUrl))
+                      run(() => openExternal(g.reviewUrl))
                     }
                   >
                     查看详细测评
@@ -575,7 +630,7 @@ export default function App() {
                   >
                     清除筛选
                   </button>
-                ) : (
+                ) : !isWeb ? (
                   <button
                     className="primary"
                     onClick={() =>
@@ -587,11 +642,11 @@ export default function App() {
                     <Plus size={16} />
                     新增健身房
                   </button>
-                )}
+                ) : <p>资料整理中，请稍后再来。</p>}
               </Empty>
             )}
           </div>
-          <footer className="sidebar-foot">
+          {!isWeb && <footer className="sidebar-foot">
             <button onClick={() => importFile("gyms")}>
               <Upload size={15} />
               导入档案
@@ -615,7 +670,11 @@ export default function App() {
                 )
               }
             />
-          </footer>
+          </footer>}
+          {isWeb && <footer className="sidebar-foot web-source-note">
+            <span>{status.updatedAt ? `资料更新于 ${new Date(status.updatedAt).toLocaleDateString("zh-CN")}` : "公开场馆资料"}</span>
+            <a href="https://github.com/player9826/national-gym-map/issues/new/choose" target="_blank" rel="noopener noreferrer">资料纠错 ↗</a>
+          </footer>}
         </aside>
         <MapView
           gyms={visibleGyms}
@@ -650,12 +709,12 @@ export default function App() {
         <main className="equipment-page">
           <div className="equipment-header">
             <div>
-              <span className="eyebrow">我的器械档案</span>
+              <span className="eyebrow">{isWeb ? "认识每一件器械" : "我的器械档案"}</span>
               <h2>
                 器械库 <span>{db.equipment.length}</span>
               </h2>
             </div>
-            <div className="actions">
+            {!isWeb && <div className="actions">
               <button
                 onClick={() => requireData(() => setModal({ type: "brands" }))}
               >
@@ -698,7 +757,7 @@ export default function App() {
                 <Plus size={17} />
                 新增器械
               </button>
-            </div>
+            </div>}
           </div>
           <div className="equipment-type-tabs" aria-label="器械顶级分类">
             {[["", "全部"], ...EQUIPMENT_TYPES].map(([type, label]) => (
@@ -787,7 +846,7 @@ export default function App() {
                   </button>
                 ))}
               </div>
-              <div className="equipment-import">
+              {!isWeb && <div className="equipment-import">
                 <button onClick={() => importFile("equipment")}>
                   <Upload size={15} />
                   导入器械
@@ -807,7 +866,7 @@ export default function App() {
                     )
                   }
                 />
-              </div>
+              </div>}
             </aside>
             <section className="equipment-main" ref={equipmentScroll} onScroll={event => setBackTop(event.currentTarget.scrollTop > event.currentTarget.clientHeight)}>
               <div className="equipment-toolbar">
@@ -818,7 +877,7 @@ export default function App() {
                   onChange={(e) => setEqSort(e.target.value)}
                 >
                   <option value="name">名称排序</option>
-                  <option value="updated">最近更新</option>
+                  {!isWeb && <option value="updated">最近更新</option>}
                 </select>
               </div>
               <div className="equipment-count">
@@ -883,7 +942,7 @@ export default function App() {
                   }
                   icon={Dumbbell}
                 >
-                  <button
+                  {!isWeb ? <button
                     className="primary"
                     onClick={() =>
                       requireData(() =>
@@ -893,14 +952,14 @@ export default function App() {
                   >
                     <Plus size={16} />
                     新增器械
-                  </button>
+                  </button> : db.equipment.length > 0 ? <button className="text-button" onClick={() => changeEqFilters({})}>清除筛选</button> : <p>资料整理中，请稍后再来。</p>}
                 </Empty>
               )}
             </section>
           </div>
         </main>
       )}
-      {gym && !pickDraft && (
+      {gym && !pickDraft && !missingRoute && (
         <Modal
           title="健身房详情"
             closeLabel="关闭健身房详情"
@@ -911,7 +970,7 @@ export default function App() {
         >
           <div className="detail-head">
             <span>场馆档案</span>
-            <div className="actions">
+            {isWeb ? <button className="text-button" onClick={share}><Link2 size={16} />复制链接</button> : <div className="actions">
               <IconButton
                 icon={Pencil}
                 label="编辑健身房"
@@ -922,7 +981,7 @@ export default function App() {
                 label="删除健身房"
                 onClick={() => remove("gyms", gym)}
               />
-            </div>
+            </div>}
           </div>
           {gym.cover && (
             <Picture
@@ -939,11 +998,11 @@ export default function App() {
                 .join(" / ") || "位置待补充"}
             </span>
             <h2>{gym.name}</h2>
-            <Status
+            {!isWeb && <Status
               visited={gym.visited}
               disabled={busy}
               onChange={(visited) => run(() => changeVisit(gym, visited))}
-            />
+            />}
             {gym.visitDate && (
               <p className="muted">到访日期 · {gym.visitDate}</p>
             )}
@@ -951,7 +1010,7 @@ export default function App() {
               <MapPin size={16} />
               {gym.address || "地址待补充"}
             </p>
-            {gym.lat == null && (
+            {!isWeb && gym.lat == null && (
               <button
                 className="text-button"
                 onClick={() => {
@@ -965,7 +1024,7 @@ export default function App() {
             )}
             <Tags values={gym.tags} />
             {brandTags(gym)}
-            <p className="description">{gym.description || "暂无简介"}</p>
+            {!isWeb && <p className="description">{gym.description || "暂无简介"}</p>}
             {gym.photos?.length > 0 && (
               <div className="gallery">
                 {gym.photos.map((p, i) => (
@@ -976,12 +1035,12 @@ export default function App() {
                       setModal({ type: "photo", src: p, name: gym.name })
                     }
                   >
-                    <img src={asset(p)} alt={`${gym.name} 照片 ${i + 1}`} />
+                    <Picture src={p} alt={`${gym.name} 照片 ${i + 1}`} type="gym" />
                   </button>
                 ))}
               </div>
             )}
-            <section className="detail-section">
+            {!isWeb && <section className="detail-section">
               <div className="section-label">
                 <h3>测评档案</h3>
                 <button
@@ -1000,7 +1059,7 @@ export default function App() {
                 <button
                   className="outline full-width"
                   onClick={() =>
-                    run(() => window.desktop.call("external", gym.reviewUrl))
+                    run(() => openExternal(gym.reviewUrl))
                   }
                 >
                   查看详细测评
@@ -1060,17 +1119,17 @@ export default function App() {
                   </button>
                 </details>
               )}
-            </section>
+            </section>}
             <section className="detail-section">
               <div className="section-label">
                 <h3>
                   关联器械 <span>{linked.length}</span>
                 </h3>
-                <IconButton
+                {!isWeb && <IconButton
                   icon={Plus}
                   label="关联器械"
                   onClick={() => setModal({ type: "link", gym })}
-                />
+                />}
               </div>
               {!linked.length && <p className="muted">暂无关联器械</p>}
               {linked.length > 0 && <>
@@ -1108,7 +1167,7 @@ export default function App() {
                       </small>
                       {l.notes && <small>{l.notes}</small>}
                     </button>
-                    <IconButton
+                    {!isWeb && <IconButton
                       icon={X}
                       label={`解除关联 ${e.name}`}
                       onClick={() =>
@@ -1117,7 +1176,7 @@ export default function App() {
                           await refresh();
                         })
                       }
-                    />
+                    />}
                   </div>
                 );
               })}
@@ -1125,12 +1184,13 @@ export default function App() {
           </div>
         </Modal>
       )}
-      {eq && (
+      {eq && !missingRoute && (
         <Modal
           title="器械详情"
+          closeLabel={isWeb ? "关闭器械详情" : "关闭弹窗"}
           wide
           onClose={() => setEquipmentId(null)}
-          footer={
+          footer={isWeb ? <button className="text-button" onClick={share}><Link2 size={16} />复制链接</button> :
             <>
               <button
                 className="danger text-button"
@@ -1178,12 +1238,12 @@ export default function App() {
                 colored
                 values={equipmentType(eq) === "fixed" ? eq.tags : []}
               />
-              <p className="description">{eq.notes || "暂无备注"}</p>
+              {!isWeb && <p className="description">{eq.notes || "暂无备注"}</p>}
               {eq.productUrl && (
                 <button
                   className="text-button"
                   onClick={() =>
-                    run(() => window.desktop.call("external", eq.productUrl))
+                    run(() => openExternal(eq.productUrl))
                   }
                 >
                   官网产品页
@@ -1194,14 +1254,14 @@ export default function App() {
                 <button
                   className="text-button"
                   onClick={() =>
-                    run(() => window.desktop.call("external", eq.imageSource))
+                    run(() => openExternal(eq.imageSource))
                   }
                 >
                   图片来源
                   <ExternalLink size={15} />
                 </button>
               )}
-              {eq.image && <p className="local-path">本地图片 · {eq.image}</p>}
+              {!isWeb && eq.image && <p className="local-path">本地图片 · {eq.image}</p>}
             </div>
           </div>
           <section className="detail-section">
@@ -1238,7 +1298,7 @@ export default function App() {
           </section>
         </Modal>
       )}
-      {modal?.type === "gym" && (
+      {!isWeb && modal?.type === "gym" && (
         <GymForm
           brands={db.brands}
           initial={modal.row}
@@ -1252,7 +1312,7 @@ export default function App() {
           }}
         />
       )}
-      {modal?.type === "equipment" && (
+      {!isWeb && modal?.type === "equipment" && (
         <EquipmentForm
           initial={modal.row}
           brands={db.brands}
@@ -1263,7 +1323,7 @@ export default function App() {
           run={run}
         />
       )}
-      {modal?.type === "batch-import" && (
+      {!isWeb && modal?.type === "batch-import" && (
         <BatchImport
           db={db}
           onClose={() => setModal(null)}
@@ -1271,7 +1331,7 @@ export default function App() {
           run={run}
         />
       )}
-      {modal?.type === "brands" && (
+      {!isWeb && modal?.type === "brands" && (
         <BrandManager
           brands={db.brands}
           equipment={db.equipment}
@@ -1281,7 +1341,7 @@ export default function App() {
           ask={ask}
         />
       )}
-      {modal?.type === "link" && (
+      {!isWeb && modal?.type === "link" && (
         <EquipmentPicker
           gym={modal.gym}
           equipment={db.equipment}
@@ -1298,7 +1358,7 @@ export default function App() {
           }
         />
       )}
-      {modal?.type === "import" && (
+      {!isWeb && modal?.type === "import" && (
         <ImportDialog
           draft={modal.draft}
           gyms={db.gyms}
@@ -1317,7 +1377,7 @@ export default function App() {
           }
         />
       )}
-      {modal?.type === "settings" && (
+      {!isWeb && modal?.type === "settings" && (
         <Settings
           status={status}
           settings={db.settings}
@@ -1329,9 +1389,13 @@ export default function App() {
       )}
       {modal?.type === "photo" && (
         <Modal title={modal.name} wide onClose={() => setModal(null)}>
-          <Picture className="full-photo" src={modal.src} alt={modal.name} />
+          <Picture className="full-photo" src={modal.src} alt={modal.name} thumbnail={false} />
         </Modal>
       )}
+      {modal?.type === "share" && <Modal title="分享资料" onClose={() => setModal(null)}>
+        <p>复制下面的链接，朋友即可直接查看这条资料。</p>
+        <input aria-label="分享链接" readOnly value={modal.url} onFocus={event => event.target.select()} style={{ width: "100%" }} />
+      </Modal>}
       {confirm && (
         <Modal
           title="确认操作"

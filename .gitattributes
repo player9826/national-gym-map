@@ -1,0 +1,2 @@
+# Shared manifests hash exact bytes; preserve exporter line endings on every platform.
+shared/*.json -text

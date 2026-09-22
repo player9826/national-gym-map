@@ -2,11 +2,11 @@
   "format": "national-gym-map-shared",
   "version": 1,
   "sourceId": "17b5e987-5b8d-4691-b21e-396be7320cd6",
-  "updatedAt": "2026-09-11T07:33:47.294Z",
+  "updatedAt": "2026-09-21T07:20:31.094Z",
   "catalog": {
     "path": "catalog.json",
-    "sha256": "6c04f4e43bf495a5566252c44162984f4e6febdea5403e206145f9c520e90f48",
-    "size": 508300
+    "sha256": "f1427e2809d553b39a2eb2343bf0c3700b9f0d33f21096059a89ccdd383ecc1e",
+    "size": 511245
   },
   "images": [
     {

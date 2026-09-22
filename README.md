@@ -1,8 +1,10 @@
 # 全国健身房地图
 
-Windows 桌面应用，用地图管理健身房、器械库及场馆与器械的关联。个人到访记录和备注保留本地；公共基础资料通过维护者发布的共享库订阅更新。
+公开网页版用于浏览健身房地图、器械库和场馆器械配置，可在电脑和手机打开并分享详情。Windows 桌面应用继续负责资料管理；个人到访记录和备注保留本地，公共基础资料通过维护者发布的共享库订阅更新。
 
-[下载最新版](https://github.com/player9826/national-gym-map/releases/latest) · [提出资料修改建议](https://github.com/player9826/national-gym-map/issues/new/choose)
+[打开网页版](https://player9826.github.io/national-gym-map/) · [下载桌面版](https://github.com/player9826/national-gym-map/releases/latest) · [提出资料修改建议](https://github.com/player9826/national-gym-map/issues/new/choose)
+
+网页版无需安装和登录，支持地图、品牌与器械筛选、图片和详情分享；不提供个人打卡或在线编辑。网页代码与公开资料更新通过独立工作流发布，使用者刷新即可获取新版。[网页开发与发布说明](docs/web.md)
 
 ![共享器械库预览](docs/images/equipment-library.png)
 

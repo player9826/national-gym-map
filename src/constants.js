@@ -1,3 +1,5 @@
+import { imageUrl } from "./data-service";
+
 export const PARTS = [
   ["CHEST", "胸"],
   ["SHOULDER", "肩"],
@@ -71,7 +73,7 @@ export const partName = (key) =>
   Array.isArray(key)
     ? key.map(partName).join(" / ")
     : isCustomPart(key) ? key.slice(7) : PARTS.find((p) => p[0] === key)?.[1] || key;
-export const asset = (rel) => (rel ? `gymasset://local/${rel}` : "");
+export const asset = imageUrl;
 export const CITIES = [
   ["北京", 39.9042, 116.4074],
   ["上海", 31.2304, 121.4737],

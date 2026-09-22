@@ -1,0 +1,148 @@
+/* Browser-only adjustments keep the desktop layout unchanged. */
+.web-app .brand,
+.web-app .brand > div,
+.web-app .equipment-page,
+.web-app .equipment-layout,
+.web-modal-backdrop .equipment-detail > div {
+  min-width: 0;
+}
+.web-app .equipment-card small,
+.web-modal-backdrop small {
+  overflow-wrap: anywhere;
+}
+.web-modal-open {
+  overflow: hidden;
+}
+.web-modal-backdrop .modal-content {
+  overscroll-behavior: contain;
+}
+.web-modal-backdrop .modal-head .icon-button {
+  width: 44px;
+  height: 44px;
+}
+.web-modal-backdrop .modal-head h2 {
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .web-app .app-header {
+    padding-inline: 16px;
+  }
+  .web-app .brand {
+    flex-shrink: 1;
+  }
+  .web-app .brand h1 {
+    overflow-wrap: anywhere;
+  }
+  .web-app .main-nav {
+    gap: 16px;
+    min-width: 0;
+    height: 44px;
+  }
+  .web-app .main-nav button {
+    flex: 1;
+  }
+  .web-app .map-page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .web-app .map-shell {
+    height: clamp(300px, 45dvh, 470px);
+  }
+  .web-app .map-tools {
+    right: 12px;
+    bottom: 58px;
+    gap: 4px;
+  }
+  .web-app .map-tools button {
+    width: 44px;
+    height: 44px;
+  }
+  .web-app .map-legend {
+    max-width: calc(100% - 32px);
+    flex-wrap: wrap;
+    bottom: 25px;
+  }
+  .web-app .equipment-sidebar {
+    max-height: none;
+    padding-bottom: 12px;
+  }
+  .web-app .group-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex: none;
+    max-height: 144px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 4px 2px;
+  }
+  .web-app .group-list .group-item {
+    min-width: 0;
+    min-height: 44px;
+    width: 100%;
+  }
+  .web-app .group-item .brand-logo img {
+    max-width: min(112px, 100%);
+  }
+  .web-app .equipment-type-tabs {
+    gap: 6px;
+    padding-inline: 16px;
+  }
+  .web-app .equipment-type-tabs button {
+    padding: 8px 11px;
+    min-height: 44px;
+  }
+  .web-app .equipment-filter-fields,
+  .web-modal-backdrop .equipment-filter-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .web-app .equipment-filter-fields input,
+  .web-modal-backdrop .equipment-filter-fields input {
+    grid-column: 1 / -1;
+  }
+  .web-app .equipment-filter-fields select,
+  .web-modal-backdrop .equipment-filter-fields select {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+  .web-app input,
+  .web-app select,
+  .web-modal-backdrop input,
+  .web-modal-backdrop select {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .web-app .equipment-count {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .web-modal-backdrop {
+    padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));
+  }
+  .web-modal-backdrop .modal {
+    max-height: calc(100dvh - max(8px, env(safe-area-inset-top)) - max(8px, env(safe-area-inset-bottom)));
+    width: 100%;
+  }
+  .web-modal-backdrop .modal-head {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .web-modal-backdrop .modal-content {
+    padding: 16px;
+  }
+  .web-modal-backdrop .gym-detail-modal .modal-content {
+    padding: 0;
+  }
+  .web-modal-backdrop .modal-foot {
+    flex-wrap: wrap;
+    padding: 12px;
+  }
+  .web-modal-backdrop .equipment-detail-image .picture,
+  .web-modal-backdrop .equipment-detail-image .image-placeholder {
+    height: 220px;
+  }
+  .web-modal-backdrop .summary-table {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+}
