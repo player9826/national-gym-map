@@ -3,13 +3,14 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { atomic, validate, blank, inside, hash } = require('./storage.cjs');
 const { normalizeClassification } = require('./equipment-model.cjs');
+const { countryOf } = require('./gym-location.mjs');
 const FORMAT = 'national-gym-map-shared';
 const reserved = value => ['__proto__', 'constructor', 'prototype'].includes(value);
 const CLASSIFICATION = ['equipmentType', 'freeWeightType', 'part', 'parts', 'tags', 'loading'];
 // Only these public facts are ever exported or accepted from a publisher.
 const FIELDS = {
   brands: ['id', 'name', 'website', 'logo'],
-  gyms: ['id', 'name', 'province', 'city', 'district', 'address', 'lat', 'lng', 'brandIds', 'cover', 'photos', 'themeColor'],
+  gyms: ['id', 'name', 'country', 'province', 'city', 'district', 'address', 'lat', 'lng', 'brandIds', 'cover', 'photos', 'themeColor'],
   equipment: ['id', 'name', 'brandId', 'equipmentType', 'freeWeightType', 'part', 'parts', 'tags', 'loading', 'model', 'series', 'image', 'imageSource', 'productUrl', 'sourceType', 'sourceUrl', 'sourceDate', 'verificationStatus'],
   links: ['id', 'gymId', 'equipmentId', 'quantity'],
 };
@@ -29,6 +30,7 @@ function checkCatalog(data) {
     if (data[key].some(r => !r || reserved(r.id))) throw new Error('共享记录标识无效。');
   }
   const clean = publicCatalog(data);
+  clean.gyms = clean.gyms.map(row => ({ ...row, country: countryOf(row) }));
   clean.equipment = clean.equipment.map(row => normalizeClassification(row, { legacy: !row.equipmentType }));
   for (const ref of imageRefs(clean)) if (!asset(ref)) throw new Error('共享图片路径无效。');
   validate({ ...blank(), ...clean, gyms: clean.gyms.map(r => ({ ...r, visited: false })) });

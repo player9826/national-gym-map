@@ -127,6 +127,7 @@ export const CITIES = [
 ];
 export const emptyGym = () => ({
   name: "",
+  country: "CN",
   province: "",
   city: "",
   district: "",

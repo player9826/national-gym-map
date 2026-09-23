@@ -38,21 +38,37 @@ async function capture(tabId,origin){
       const url=queue[index];progress(`正在采集 ${index+1}/${queue.length} 页，已完成 ${bundle.pages.length} 页。`);
       try{
         let page=initial;
-        if(index){const tab=await chrome.tabs.create({url,active:false});opened=tab.id;await waitForTab(opened);page=await readTab(opened);}
+        const listing=(initial.listingImages||[]).find(item=>item.url===url);
+        if(index){
+          try{
+            const tab=await chrome.tabs.create({url,active:false});opened=tab.id;await waitForTab(opened);page=await readTab(opened);
+            if(page.error)throw new Error(page.error);
+          }catch(error){
+            if(!listing||stop)throw error;
+            bundle.failures.push({url,message:error.message});
+            const name=listing.name.replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+            page={url,html:`<h1>${name}</h1>`,imageSources:[],detailError:String(error.message).slice(0,500)};
+          }
+        }
         if(new URL(page.url).origin!==origin)throw new Error('页面跳转离开已授权官网。');
         if(page.error)throw new Error(page.error);
         const htmlSize=bytes(page.html);
         if(htmlSize>MAX_HTML)throw new Error('页面内容超过大小限制。');
         if(decodedSize+htmlSize>MAX_DECODED)throw new Error('采集内容达到大小上限。');
         const saved={url:page.url,html:page.html,images:[]};
+        if(page.detailError)saved.detailError=page.detailError;
+        const paired=listing&&page.url===url?listing:null;
+        if(paired){saved.listingUrl=initial.url;saved.listingImageSource=paired.source;}
         if(bytes(JSON.stringify({...bundle,pages:[...bundle.pages,saved]}))>MAX_TOTAL)throw new Error('采集文件达到总大小上限。');
         bundle.pages.push(saved);
         decodedSize+=htmlSize;
-        for(const source of page.imageSources){
+        const sources=[...new Set([...(paired?[paired.source]:[]),...page.imageSources.slice(0,3)])];
+        for(const source of sources){
           if(stop)break;
           try{const dataUrl=await imageData(source,origin);const imageSize=atob(dataUrl.split(',')[1]).length;if(decodedSize+imageSize>MAX_DECODED)throw new Error('采集内容达到大小上限。');saved.images.push({source,dataUrl});if(bytes(JSON.stringify(bundle))>MAX_TOTAL){saved.images.pop();throw new Error('采集文件达到总大小上限。');}decodedSize+=imageSize;}
           catch(error){bundle.failures.push({url:source,message:error.message});}
         }
+        if(paired&&!saved.images.some(image=>image.source===paired.source)){delete saved.listingUrl;delete saved.listingImageSource;}
       }catch(error){bundle.failures.push({url,message:error.message});}
       finally{if(opened){await chrome.tabs.remove(opened).catch(()=>{});opened=undefined;}}
       if(index<queue.length-1)await pause(500);

@@ -3,16 +3,19 @@ import {EQUIPMENT_TYPES, FREE_WEIGHT_TYPES, PART_TAGS, TAGS} from './constants';
 import {partOptions, seriesOptions} from './equipment-filtering';
 import './equipment-filters.css';
 
-export default function EquipmentFilters({value, onChange, equipment, brands, showType = true, showBrand = true, searchLabel = '搜索器械'}) {
+export default function EquipmentFilters({value, onChange, equipment, brands, showType = true, showBrand = true, searchLabel = '搜索器械', sortControl}) {
   const update = patch => onChange({...value, ...patch});
   const fixed = !value.type || value.type === 'fixed';
   const applications = PART_TAGS[value.part] || [];
   return <div className="equipment-filters">
-    <div className="equipment-filter-fields">
+    <div className="equipment-search-row">
       <select aria-label="搜索字段" value={value.field || 'all'} onChange={e => update({field:e.target.value})}>
         <option value="all">综合搜索</option><option value="series">仅系列</option><option value="name">仅名称</option><option value="model">仅型号</option>
       </select>
       <input aria-label={searchLabel} placeholder="输入搜索内容" value={value.query || ''} onChange={e => update({query:e.target.value})}/>
+      {sortControl}
+    </div>
+    <div className="equipment-filter-fields">
       {showType && <select aria-label="选择器械类型" value={value.type || ''} onChange={e => update({type:e.target.value,freeType:'',part:'',application:'',loading:''})}>
         <option value="">全部类型</option>{EQUIPMENT_TYPES.map(([id,label]) => <option key={id} value={id}>{label}</option>)}
       </select>}

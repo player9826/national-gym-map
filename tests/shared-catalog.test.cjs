@@ -27,6 +27,23 @@ function fixture(t) {
   const preview = () => api.sharedPreview({ url: 'https://example.test/repo/manifest.json' });
   return { publisher, subscriber, destination, publish, api, preview };
 }
+test('country survives public export and subscription, including a legacy Singapore record', async t => {
+  const { publisher, subscriber, destination, publish, api, preview } = fixture(t);
+  const db = structuredClone(publisher.db);
+  db.gyms[0].city = 'Singapore';
+  publisher.save(db);
+  publish();
+  const data = JSON.parse(fs.readFileSync(path.join(destination, 'catalog.json')));
+  assert.equal(data.gyms[0].country, 'SG');
+  assert.equal(data.gyms[0].city, 'Singapore');
+  assert.equal(data.gyms[0].notes, undefined);
+  assert.equal(publisher.db.gyms[0].country, undefined);
+  const draft = await preview();
+  await api.sharedApply({ token: draft.token });
+  assert.equal(subscriber.db.gyms[0].country, 'SG');
+  assert.equal(subscriber.db.gyms[0].visited, false);
+});
+
 test('custom parts and series share with alias normalization and protect local series edits', async t => {
   const {publisher,subscriber,publish,preview,api,destination}=fixture(t);
   const {upsert}=require('../electron/catalog.cjs');

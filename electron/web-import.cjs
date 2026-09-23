@@ -52,7 +52,8 @@ function parsePage(html, url) {
     );
   const products = discoverProducts($, url);
   const pageName = headingText || title.split(/\s*[|–]\s*/)[0].trim();
-  const modelHeading = /\b(?=[a-z0-9-]*[a-z])(?=[a-z0-9-]*\d)[a-z][a-z0-9-]{2,}\b/i.test(pageName);
+  const numericModel = pageName.match(/\b\d{3,8}(?:\s*,\s*\d{3,8})*$/)?.[0];
+  const modelHeading = !!numericModel || /\b(?=[a-z0-9-]*[a-z])(?=[a-z0-9-]*\d)[a-z][a-z0-9-]{2,}\b/i.test(pageName);
   const explicitListing = /\/product-category\/|\/collections\/[^/]+\/?(?:\?|$)/i.test(url) || $("body.post-type-archive-product, body.tax-product_cat").length;
   const explicitProduct = $('.single-product, [itemtype$="/Product"]').length;
   if (explicitListing || (products.length > 1 && !explicitProduct && !modelHeading)) {
@@ -66,7 +67,7 @@ function parsePage(html, url) {
     !$('script[type="application/ld+json"]').text().includes('"Product"')
   )
     result.name = heading.slice(0, 300);
-  result.model ||= $('[itemprop="sku"], .sku').first().text().trim();
+  result.model ||= numericModel || $('[itemprop="sku"], .sku').filter((_, el) => !$(el).closest('.product-list,.products,.product-grid').length).first().text().trim();
   result.name = heading || pageName || result.name;
   result.imageCandidates = imageCandidates($, url, result.name, result.imageSource);
   result.imageSource = result.imageCandidates[0] || "";
@@ -379,6 +380,33 @@ function createWebImporter(store, getWindow) {
   }
   // Bounded, session-only originals: previews never write into the data directory.
   const previewImages = new Map();
+  const listingProducts = new Map();
+  const productKey = value => new URL(value).href.replace(/#.*$/, '').replace(/\/$/, '');
+  function rememberListing(result) {
+    if (result.kind === 'listing') for (const row of result.products) {
+      if (row.listingImageSource) listingProducts.set(productKey(row.url), row);
+      if (listingProducts.size > 400) listingProducts.delete(listingProducts.keys().next().value);
+    }
+    return result;
+  }
+  async function listingFor(url) {
+    const stamp = generation;
+    const key = productKey(url);
+    if (listingProducts.has(key)) return listingProducts.get(key);
+    // One same-site parent only; never guess a match from its title or first image.
+    const parent = new URL(url);
+    parent.pathname = parent.pathname.replace(/\/?$/, '').replace(/\/[^/]*$/, '/') || '/';
+    parent.search = ''; parent.hash = '';
+    if (parent.pathname === '/' || productKey(parent.href) === key) return;
+    try {
+      const response = await bytes(parent.href, 8 * 1024 ** 2);
+      ensureCurrent(stamp);
+      if (new URL(response.url).origin !== parent.origin || !response.type.includes('html')) return;
+      const rows = discoverProducts(cheerio.load(response.bytes.toString('utf8')), response.url);
+      rememberListing({kind:'listing', products:rows});
+    } catch { /* Detail information remains usable if the listing is unavailable. */ }
+    return listingProducts.get(key);
+  }
   const capturedImages = new Map();
   const cachedImage = source => capturedImages.get(source) || previewImages.get(source);
   let previewBytes = 0;
@@ -419,16 +447,24 @@ function createWebImporter(store, getWindow) {
     return { ...result, image: result.image || "", brandId, warning, sourceType: "official_web", sourceUrl: result.productUrl || "", sourceDate: new Date().toISOString(), verificationStatus: "needs_review" };
   }
   async function thumbnail(result, capturedOnly = false) {
-    if (result.kind === "listing") return result;
+    if (result.kind === "listing") return rememberListing(result);
     const stamp = generation;
+    const listing = result.listingImageSource ? result : capturedOnly ? listingProducts.get(productKey(result.productUrl)) : await listingFor(result.productUrl);
+    ensureCurrent(stamp);
+    const listingSource = listing?.listingImageSource || '';
+    result.listingImageSource = listingSource;
+    result.listingUrl = listing?.listingUrl || '';
     result.imageOptions = [];
-    for (const source of imageOptions(result)) {
+    let detailCount = 0;
+    for (const source of [...new Set([listingSource, ...imageOptions(result)].filter(Boolean))]) {
+      const origin = source === listingSource ? 'listing' : 'detail';
+      if (origin === 'detail' && detailCount === 3) continue;
       try {
         let response;
         try {
           if (cachedImage(source)) response = {bytes: cachedImage(source)};
           else if (capturedOnly) continue;
-          else response = await bytes(source, 20 * 1024 ** 2, result.productUrl);
+          else response = await bytes(source, 20 * 1024 ** 2, origin === 'listing' ? result.listingUrl : result.productUrl);
         }
         catch (error) {
           ensureCurrent(stamp);
@@ -454,8 +490,8 @@ function createWebImporter(store, getWindow) {
         }
         if (jpeg.length > 100 * 1024) continue;
         if (!capturedOnly) cacheImage(source, response.bytes);
-        result.imageOptions.push({source, preview: `data:image/jpeg;base64,${jpeg.toString("base64")}`});
-        if (result.imageOptions.length === 3) break;
+        result.imageOptions.push({source, origin, preview: `data:image/jpeg;base64,${jpeg.toString("base64")}`});
+        if (origin === 'detail') detailCount++;
       } catch { ensureCurrent(stamp); /* Keep metadata available when an image fails. */ }
     }
     result.thumbnail = result.imageOptions[0]?.preview || "";
@@ -463,7 +499,7 @@ function createWebImporter(store, getWindow) {
     return result;
   }
   async function preview(result, brandId) {
-    if (result.kind === "listing") return result;
+    if (result.kind === "listing") return rememberListing(result);
     result = await thumbnail(result);
     return {...result, brandId, pendingWebImage: !!result.thumbnail,
       warning: result.thumbnail ? "" : "已读取资料，图片未能加载。可在辅助浏览器打开后重新读取。",
@@ -481,8 +517,10 @@ function createWebImporter(store, getWindow) {
       checkBrand(brandId);
       const pages = require('./browser-capture.cjs').validateCapture(bundle);
       capturedImages.clear();
+      listingProducts.clear();
       for (const page of pages) for (const image of page.images)
         capturedImages.set(image.source, image.bytes);
+      for (const page of pages) rememberListing({kind:'listing', products:discoverProducts(cheerio.load(page.html),page.url)});
       const products = [], errors = [];
       for (const page of pages) {
         try {
@@ -491,8 +529,16 @@ function createWebImporter(store, getWindow) {
           // Captured candidates are explicitly chosen from the rendered page.
           result.imageCandidates = page.images.map(image => image.source);
           result.imageSource = result.imageCandidates[0] || '';
+          const paired = listingProducts.get(productKey(page.url));
+          if (page.listingImageSource && (paired?.listingImageSource !== page.listingImageSource || paired.listingUrl !== page.listingUrl))
+            throw new Error('采集图片无法与列表页的对应器械链接核对，请重新采集。');
+          if (page.listingImageSource) {
+            result.listingImageSource = paired.listingImageSource;
+            result.listingUrl = paired.listingUrl;
+          }
           const data = await thumbnail(result, true);
-          products.push({...data, captured: true, url: page.url, brandId,
+          if (page.detailError) errors.push(`${page.url}: ${page.detailError}`);
+          products.push({...data, warning:page.detailError ? `详情读取失败，已保留列表资料：${page.detailError}` : '', captured: true, url: page.url, brandId,
             pendingWebImage: !!data.thumbnail, sourceUrl: page.url,
             sourceType: 'official_web', sourceDate: new Date().toISOString(),
             verificationStatus: 'needs_review'});
@@ -500,7 +546,7 @@ function createWebImporter(store, getWindow) {
       }
       if (!products.length) throw new Error(`采集文件中没有可导入的器械详情。${errors[0] || '请采集具体产品页或包含详情的目录。'}`);
       const warning = errors.length ? `${errors.length} 个页面未能识别，其余资料待确认保存。` : '';
-      return products.length === 1 ? {...products[0], warning} : {kind: 'listing', products, warning};
+      return products.length === 1 ? {...products[0], warning:products[0].warning || warning} : {kind: 'listing', products, warning};
     },
     productMetadata: async ({ url, brandId, browser: useBrowser = false }) => {
       checkBrand(brandId);
@@ -529,7 +575,9 @@ function createWebImporter(store, getWindow) {
           brandId,
         };
       } catch (error) {
-        return structuredError(error, useBrowser ? "browser" : "http");
+        const listing = listingProducts.get(productKey(url)) || (!useBrowser && await listingFor(url));
+        const fallback = listing ? await thumbnail({name:listing.name,productUrl:url,...listing,imageSource:'',imageCandidates:[]}) : {};
+        return {...fallback, ...structuredError(error, useBrowser ? "browser" : "http")};
       }
     },
     productImage: async ({ imageSource, productUrl, brandId }) => {
@@ -557,8 +605,8 @@ function createWebImporter(store, getWindow) {
               html = response.bytes.toString("utf8");
             }
             const result = parsePage(html, response.url);
-            if (result.kind !== "listing" && !result.imageSource)
-              throw new Error("页面需要浏览器补充读取。");
+            if (result.kind !== 'listing' && !result.imageSource && !await listingFor(result.productUrl))
+              throw new Error('页面需要浏览器补充读取。');
             ensureCurrent(stamp);
             return await preview(result, brandId);
           } catch (e) {
@@ -588,6 +636,12 @@ function createWebImporter(store, getWindow) {
           if (automatic === win) automatic = null;
         }
       } catch (e) {
+        ensureCurrent(stamp);
+        const listing = listingProducts.get(productKey(url)) || await listingFor(url);
+        if (listing?.listingImageSource) {
+          const result = await preview({name:listing.name,...listing,productUrl:url,imageSource:'',imageCandidates:[]},brandId);
+          return {...result, warning:`详情读取失败：${explain(e)} 已保留列表资料，请补充型号及分类后保存。`};
+        }
         throw new Error(explain(e));
       }
     },
@@ -619,6 +673,7 @@ function createWebImporter(store, getWindow) {
     browserClose: () => {
       generation++;
       previewImages.clear();
+      listingProducts.clear();
       previewBytes = 0;
       for (const controller of controllers)
         controller.abort(new Error("读取已取消。"));

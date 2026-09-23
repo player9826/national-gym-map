@@ -1,7 +1,10 @@
 .equipment-filters { width:100%; min-width:0; }
+.equipment-search-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:8px; }
+.equipment-search-row input { flex:0 1 260px; width:260px; min-width:120px; }
+.equipment-search-row select { width:auto; max-width:180px; }
 .equipment-filter-fields { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-.equipment-filter-fields input { flex:1 1 180px; min-width:120px; }
-.equipment-filter-fields select { max-width:220px; min-width:100px; }
+.equipment-filter-fields select { width:auto; max-width:220px; min-width:100px; }
+.equipment-filters input, .equipment-filters select { padding:7px 9px; font-size:12px; }
 .equipment-secondary { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
 .equipment-secondary button { min-width:58px; }
 .equipment-secondary button[aria-pressed="false"] { background:white; color:#334d45; }

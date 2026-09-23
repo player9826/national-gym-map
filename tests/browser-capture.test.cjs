@@ -15,3 +15,19 @@ test('capture enforces page and per-page image limits',()=>{
   const b=fixture();b.pages=Array(51).fill(b.pages[0]);assert.throws(()=>validateCapture(b));
   const c=fixture();c.pages[0].images=Array(4).fill(c.pages[0].images[0]);assert.throws(()=>validateCapture(c));
 });
+
+test('capture accepts one paired listing image and three detail images, rejecting invalid listing metadata',()=>{
+  const b=fixture(),page=b.pages[0];
+  page.listingUrl='https://example.com/catalog';page.listingImageSource=page.images[0].source;
+  page.images=Array.from({length:4},(_,i)=>({...page.images[0],source:i?`https://example.com/detail-${i}.png`:page.listingImageSource}));
+  assert.equal(validateCapture(b)[0].images.length,4);
+  for(const values of [
+    {listingUrl:'https://other.example/catalog'},
+    {listingUrl:page.url},
+    {listingImageSource:'https://example.com/missing.png'},
+    {listingImageSource:undefined},
+    {detailError:'x'.repeat(501)}
+  ])assert.throws(()=>validateCapture({...b,pages:[{...page,...values}]}));
+  const fallback={...page,detailError:'访问被拒绝',images:[page.images[0]]};
+  assert.equal(validateCapture({...b,pages:[fallback]})[0].detailError,'访问被拒绝');
+});

@@ -77,7 +77,7 @@ async function main() {
     const equipment = catalog.equipment.find(e => e.id === link.equipmentId);
     await page.getByRole('textbox', { name: '搜索健身房', exact: true }).fill(gym.name);
     await expect(page.locator('.gym-item')).toHaveCount(catalog.gyms.filter(g => g.name.includes(gym.name)).length);
-    await page.locator('.gym-item').filter({ hasText: gym.name }).first().click();
+    await page.locator('.gym-item').filter({ hasText: gym.name }).first().locator('.gym-open').click();
     await page.locator('.linked-open').filter({ hasText: equipment.name }).first().click();
     await expect(page).toHaveURL(new RegExp(`#/equipment/${encodeURIComponent(equipment.id)}(?:\\?|$)`));
     const detail = page.getByRole('dialog').last();

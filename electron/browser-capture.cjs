@@ -14,8 +14,15 @@ function validateCapture(bundle) {
   let size = 0;
   return bundle.pages.map(page => {
     const url = address(page.url);
+    const hasListing=page.listingUrl!==undefined||page.listingImageSource!==undefined;
+    const listingUrl=hasListing?address(page.listingUrl):'';
+    const listingImageSource=hasListing?address(page.listingImageSource):'';
+    if(hasListing&&(new URL(listingUrl).origin!==new URL(url).origin||listingUrl===url||page.images?.[0]?.source!==listingImageSource))
+      throw new Error('列表图片来源与采集页面不匹配。');
+    if(page.detailError!==undefined&&(typeof page.detailError!=='string'||page.detailError.length>500))
+      throw new Error('采集页面错误说明格式无效。');
     if (typeof page.html !== 'string' || Buffer.byteLength(page.html) > 4 * 1024 ** 2 ||
-        !Array.isArray(page.images) || page.images.length > 3)
+        !Array.isArray(page.images) || page.images.length > (hasListing?4:3))
       throw new Error('采集页面或图片数量超过限制。');
     size += Buffer.byteLength(page.html);
     const images = page.images.map(image => {
@@ -30,7 +37,8 @@ function validateCapture(bundle) {
       return {source, bytes};
     });
     if (size > 48 * 1024 ** 2) throw new Error('采集内容过大，请分批采集。');
-    return {url, html: page.html, images};
+    if(new Set(images.map(image=>image.source)).size!==images.length)throw new Error('采集页面包含重复图片。');
+    return {url, html: page.html, images,...(hasListing?{listingUrl,listingImageSource}:{}),...(page.detailError?{detailError:page.detailError}:{})};
   });
 }
 module.exports = {validateCapture};

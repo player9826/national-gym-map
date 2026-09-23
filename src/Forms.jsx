@@ -37,6 +37,7 @@ import EquipmentClassification from "./EquipmentClassification";
 import SharedCatalogSettings from "./SharedCatalogSettings";
 import BrandLogo from "./BrandLogo";
 import GymThemePicker from "./GymThemePicker";
+import { COUNTRIES, countryOf, countryName } from "../electron/gym-location.mjs";
 
 export function GymForm({
   initial,
@@ -46,7 +47,7 @@ export function GymForm({
   run,
   brands = [],
 }) {
-  const [row, setRow] = useState(initial),
+  const [row, setRow] = useState(() => ({ ...initial, country: countryOf(initial) })),
     [tagText, setTagText] = useState((initial.tags || []).join("，"));
   const set = (key) => (e) => setRow({ ...row, [key]: e.target.value });
   const draft = () => ({
@@ -97,6 +98,14 @@ export function GymForm({
           value={row.themeColor}
           onChange={(themeColor) => setRow((current) => ({ ...current, themeColor }))}
         />
+        <Field label="国家/地区" full>
+          <select value={row.country} onChange={set("country")}>
+            {!COUNTRIES.some(([code]) => code === row.country) &&
+              <option value={row.country}>{countryName(row.country)}</option>}
+            {COUNTRIES.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
+          </select>
+        </Field>
+        {row.country === "CN" && <>
         <Field label="省份">
           <input value={row.province} onChange={set("province")} />
         </Field>
@@ -111,7 +120,8 @@ export function GymForm({
         <Field label="区县">
           <input value={row.district} onChange={set("district")} />
         </Field>
-        <Field label="详细地址">
+        </>}
+        <Field label="详细地址" full={row.country !== "CN"}>
           <input value={row.address} onChange={set("address")} />
         </Field>
         <div className="field full">
@@ -149,7 +159,8 @@ export function GymForm({
             </Field>
           </div>
           <small>
-            坐标采用 WGS84（World Geodetic System 1984，1984 世界大地坐标系）
+            坐标采用 WGS84（World Geodetic System 1984，1984 世界大地坐标系）。
+            可以稍后定位；仅填写地址不会自动生成地图位置。
           </small>
         </div>
         <div className="field">
@@ -270,7 +281,7 @@ export function GymForm({
   );
 }
 export function WebsiteImageChoices({ options = [], selected = "", disabled = false, onChange }) {
-  const choices = options.filter((option) => option.source && /^data:image\//.test(option.preview || "")).slice(0, 3);
+  const choices = options.filter((option) => option.source && /^data:image\//.test(option.preview || "")).slice(0, 4);
   if (!choices.length) return null;
   return (
     <section className="website-image-choices field full" aria-label="网站候选图片">
@@ -281,7 +292,7 @@ export function WebsiteImageChoices({ options = [], selected = "", disabled = fa
             aria-label={`选择网站图片 ${index + 1}`} aria-pressed={selected === option.source}
             onClick={() => onChange(option)}>
             <img src={option.preview} alt={`网站候选图片 ${index + 1}`} onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} />
-            <span>{selected === option.source ? "已选封面" : `图片 ${index + 1}`}</span>
+            <span>{option.origin === 'listing' ? '列表页' : '详情页'} · {selected === option.source ? "已选封面" : `图片 ${index + 1}`}</span>
           </button>
         ))}
       </div>
@@ -345,7 +356,7 @@ export function EquipmentForm({
       ...data,
       ...(website ? {
         image: current.image,
-        imageOptions: result.imageOptions.slice(0, 3),
+        imageOptions: result.imageOptions.slice(0, 4),
         imageSource: result.imageSource || result.imageOptions[0]?.source || "",
         thumbnail: result.thumbnail || result.imageOptions[0]?.preview || "",
         pendingWebImage: !!result.imageOptions[0]?.preview && result.pendingWebImage !== false,

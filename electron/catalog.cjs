@@ -5,6 +5,7 @@ const dns = require("node:dns").promises;
 const net = require("node:net");
 const cheerio = require("cheerio");
 const { atomic, validate, TAGS } = require("./storage.cjs");
+const { countryOf } = require("./gym-location.mjs");
 const {
   normalizeClassification,
   validateClassification,
@@ -17,6 +18,7 @@ function gym(input) {
     ...input,
     id: input.id || id(),
     name: text(input.name),
+    country: countryOf(input),
     province: text(input.province),
     city: text(input.city),
     district: text(input.district),
@@ -73,7 +75,7 @@ function equipment(input, { legacy = false, allowIncomplete = false } = {}) {
     { legacy },
   );
   validateClassification(row, { allowIncomplete: legacy || allowIncomplete });
-  for (const field of ['thumbnail', 'imageOptions', 'imageCandidates', 'pendingWebImage', 'captured', 'kind', 'success', 'warning', 'url'])
+  for (const field of ['thumbnail', 'imageOptions', 'imageCandidates', 'listingImageSource', 'listingUrl', 'pendingWebImage', 'captured', 'kind', 'success', 'warning', 'url'])
     delete row[field];
   return row;
 }
