@@ -138,7 +138,7 @@ async function main() {
       .click();
     await expect(page.locator(".gym-marker")).toHaveCount(0);
     await page.getByRole("button", { name: "全部", exact: true }).click();
-    await page.getByRole("button", { name: "回到全国", exact: true }).click();
+    await page.getByRole("button", { name: "回到全球", exact: true }).click();
     await page.getByRole("button", { name: "放大地图", exact: true }).click();
     await page.getByRole("button", { name: "缩小地图", exact: true }).click();
     const drag = await page.getByTestId("map").boundingBox();
@@ -146,7 +146,7 @@ async function main() {
     await page.mouse.down();
     await page.mouse.move(drag.x + 210, drag.y + 290, { steps: 10 });
     await page.mouse.up();
-    await page.getByRole("button", { name: "回到全国", exact: true }).click();
+    await page.getByRole("button", { name: "回到全球", exact: true }).click();
     await page.waitForTimeout(350);
     await page.screenshot({ path: path.join(out, "map-desktop.png") });
     checks.push(

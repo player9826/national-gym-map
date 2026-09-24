@@ -35,7 +35,7 @@ function readSnapshot(source) {
   const refs = [...new Set([
     ...catalog.gyms.flatMap(row => [row.cover, ...(row.photos || [])]),
     ...catalog.equipment.map(row => row.image),
-    ...catalog.brands.map(row => row.logo),
+    ...catalog.brands.flatMap(row => [row.logo, row.bannerImage]),
   ].filter(Boolean))];
   for (const ref of refs) if (!descriptors.has(ref)) throw new Error(`共享图片未在清单中：${ref}`);
   return { manifest, catalog, descriptors, refs };

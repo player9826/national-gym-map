@@ -33,7 +33,7 @@ async function main() {
       return;
     }
     if (req.url === "/slow") return;
-    if (["/image.png", "/angle-two.png", "/angle-three.png"].includes(req.url)) {
+    if (["/image.png", "/angle-two.png", "/angle-three.png", "/listing.png", "/neighbor.png"].includes(req.url)) {
       if (
         !req.headers.referer ||
         !req.headers.cookie?.includes("product=yes")
@@ -53,6 +53,13 @@ async function main() {
     }
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.setHeader("Set-Cookie", "product=yes; Path=/; SameSite=Lax");
+    if (req.url === '/mixed/') {
+      res.end('<h1>Classic machines</h1><main><div><a href="abdominal-4212/"><img src="/listing.png"></a><h3><a href="abdominal-4212/">Abdominal 4212</a></h3></div><div><a href="blocked-4022/"><h3>Fly 4022</h3><img src="/neighbor.png"></a></div></main>');return;
+    }
+    if (req.url === '/mixed/abdominal-4212/') {
+      res.end('<h1>Abdominal 4212</h1><main><div class="product-gallery"><img src="/image.png"><img src="/angle-two.png"><img src="/angle-three.png"></div><div class="product-grid"><a href="/product/foot-strap"><h3>Foot Strap</h3></a><a href="/product/cover"><h3>Wear Cover</h3></a></div></main>');return;
+    }
+    if (req.url === '/mixed/blocked-4022/') {res.writeHead(403);res.end('<title>Access Denied</title>');return;}
     if (req.url === '/three-images') {
       res.end('<title>Gallery Press</title><main><h1>Gallery Press</h1><div class="product-gallery"><img src="/image.png"><img src="/angle-two.png"><img src="/angle-three.png"></div></main>');
       return;
@@ -329,6 +336,21 @@ async function main() {
     check("preview never commits equipment");
     const imageFiles = () => fs.existsSync(path.join(temp, 'data', 'equipment')) ? fs.readdirSync(path.join(temp, 'data', 'equipment')) : [];
     assert.deepEqual(imageFiles(), []);
+    const mixed = await read('/mixed/abdominal-4212/');
+    assert.equal(mixed.model,'4212');
+    assert.equal(mixed.imageOptions.length,4);
+    assert.deepEqual(mixed.imageOptions.map(i=>i.origin),['listing','detail','detail','detail']);
+    assert.equal(mixed.imageSource,`${base}/listing.png`);
+    assert.ok(!mixed.imageOptions.some(i=>i.source.endsWith('/neighbor.png')));
+    assert.deepEqual(imageFiles(),[]);
+    const batch = await call('batchScan',{brandId,url:`${base}/mixed/`});
+    const fetched = await call('batchFetch',{id:batch.id,candidateId:batch.candidates.find(r=>r.name==='Abdominal 4212').id});
+    assert.equal(fetched.candidates.find(r=>r.name==='Abdominal 4212').imageOptions.length,4);
+    const failed = await call('batchFetch',{id:batch.id,candidateId:batch.candidates.find(r=>r.name==='Fly 4022').id});
+    const fallback=failed.candidates.find(r=>r.name==='Fly 4022');
+    assert.equal(fallback.status,'fetch_failed');assert.equal(fallback.imageOptions[0].source,`${base}/neighbor.png`);
+    assert.deepEqual(imageFiles(),[]);
+    check('exact listing image plus three detail images; direct parent lookup and failed batch detail retain list photo without saving');
     const gallery = await read('/three-images');
     assert.equal(gallery.imageOptions.length, 3);
     assert.deepEqual(imageFiles(), []);
@@ -371,6 +393,18 @@ async function main() {
     assert.equal(avifCapture.imageOptions.length,1);
     assert.ok(avifCapture.thumbnail.startsWith('data:image/jpeg;'));
     check('captured originals survive auxiliary window close; AVIF candidates decode for preview');
+    const capturedOrigin='https://offline-capture.invalid';
+    const listingUrl=capturedOrigin+'/classic/';
+    const listPhoto=capturedOrigin+'/list.png';
+    const captureFour=await call('capturePreview',{brandId,bundle:{format:'national-gym-map-capture',version:1,pages:[
+      {url:listingUrl,html:'<h1>Classic</h1><main><a href="abdominal-4212/"><h3>Abdominal 4212</h3><img src="/list.png"></a><a href="row-4010/"><h3>Row 4010</h3><img src="/other.png"></a></main>',images:[]},
+      {url:listingUrl+'abdominal-4212/',html:'<h1>Abdominal 4212</h1>',listingUrl,listingImageSource:listPhoto,
+        images:[listPhoto,...[1,2,3].map(n=>capturedOrigin+`/detail${n}.png`)].map(source=>({source,dataUrl:`data:image/png;base64,${image.toString('base64')}`}))}
+    ]}});
+    assert.equal(captureFour.imageOptions.length,4);
+    assert.equal(captureFour.imageOptions[0].origin,'listing');
+    assert.equal(captureFour.imageSource,listPhoto);
+    check('offline capture validates exact list pairing and retains all four source-labelled candidates without network');
     report.passed = true;
   } finally {
     fs.mkdirSync(path.dirname(output), { recursive: true });

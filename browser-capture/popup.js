@@ -6,7 +6,8 @@ document.querySelector('#start').onclick = async () => {
     if (!['http:','https:'].includes(url.protocol)) throw new Error('请先打开官网页面。');
     const [capture] = await chrome.scripting.executeScript({target:{tabId:tab.id},func:extractCapturePage});
     // Ask explicitly for the current site's detected image domains as well.
-    const origins = [...new Set([`${url.origin}/*`,...(capture?.result?.imageSources||[]).map(source=>`${new URL(source).origin}/*`)])];
+    const sources=[...(capture?.result?.imageSources||[]),...(capture?.result?.listingImages||[]).map(item=>item.source)];
+    const origins = [...new Set([`${url.origin}/*`,...sources.map(source=>`${new URL(source).origin}/*`)])];
     if (!await chrome.permissions.request({origins})) throw new Error('未获得本站及图片来源采集权限。');
     const result = await chrome.runtime.sendMessage({method:'start',tabId:tab.id,origin:url.origin});
     if (result.error) throw new Error(result.error);

@@ -77,7 +77,7 @@ async function main() {
     const equipment = catalog.equipment.find(e => e.id === link.equipmentId);
     await page.getByRole('textbox', { name: '搜索健身房', exact: true }).fill(gym.name);
     await expect(page.locator('.gym-item')).toHaveCount(catalog.gyms.filter(g => g.name.includes(gym.name)).length);
-    await page.locator('.gym-item').filter({ hasText: gym.name }).first().click();
+    await page.locator('.gym-item').filter({ hasText: gym.name }).first().locator('.gym-open').click();
     await page.locator('.linked-open').filter({ hasText: equipment.name }).first().click();
     await expect(page).toHaveURL(new RegExp(`#/equipment/${encodeURIComponent(equipment.id)}(?:\\?|$)`));
     const detail = page.getByRole('dialog').last();
@@ -106,6 +106,14 @@ async function main() {
     await page.locator('.equipment-sidebar .group-list').getByRole('button', { name: new RegExp(brand.name) }).first().click();
     const brandCount = catalog.equipment.filter(e => e.brandId === brand.id).length;
     await expect(page.locator('.equipment-card')).toHaveCount(brandCount);
+    await expect(page.getByRole('combobox', { name: '搜索字段', exact: true })).not.toBeVisible();
+    await page.locator('.equipment-advanced > summary').click();
+    await page.getByRole('combobox', { name: '搜索字段', exact: true }).selectOption('name');
+    await page.getByRole('combobox', { name: '选择器械类型', exact: true }).selectOption('fixed');
+    await expect(page.locator('.equipment-card')).toHaveCount(catalog.equipment.filter(e => e.brandId === brand.id && e.equipmentType === 'fixed').length);
+    await page.getByRole('combobox', { name: '选择器械类型', exact: true }).selectOption('');
+    await page.getByRole('combobox', { name: '搜索字段', exact: true }).selectOption('all');
+    await page.locator('.equipment-advanced > summary').click();
     const search = page.getByRole('textbox', { name: '搜索器械', exact: true });
     await search.fill(equipment.name);
     await expect(page.locator('.equipment-card').first()).toBeVisible();

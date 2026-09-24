@@ -46,8 +46,18 @@ function discoverProducts($, base) {
     name = name.replace(/\s+(?:\$|€|£)\s*\d[\s\S]*$/, '').trim();
     if (!name || name.length > 200 || /^(?:quick view|read more|select options|add to cart|view all|learn more|shop now|next|previous|home|全部|查看更多)$/i.test(name) || accessory.test(name)) return;
     target.hash = ''; const key = target.href.replace(/\/$/,'');
-    const local = cheerio.load(node.html() || ''); const images = imageCandidates(local, base, name);
-    if (!found.has(key) || (!found.get(key).imageSource && images.length)) found.set(key,{name,url:target.href,imageSource:images[0] || ''});
+    let card = node;
+    // Some catalogs put the title and photo in separate links to the same product.
+    for (let depth = 0; depth < 3 && !card.find('img,source,[style*="url("]').length; depth++) {
+      const parent = card.parent();
+      if (!parent.length || parent.is('body,main,article') || parent.find('a[href]').toArray().some(a => {
+        const href = publicUrl($(a).attr('href'), base);
+        return href && href.replace(/#.*$/, '').replace(/\/$/, '') !== key;
+      })) break;
+      card = parent;
+    }
+    const local = cheerio.load(card.html() || ''); const images = imageCandidates(local, base, name);
+    if (!found.has(key) || (!found.get(key).imageSource && images.length)) found.set(key,{name,url:target.href,imageSource:images[0] || '',listingImageSource:images[0] || '',listingUrl:base});
   });
   return [...found.values()].slice(0,200);
 }

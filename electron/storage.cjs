@@ -58,6 +58,8 @@ const blank = () => ({
     name,
     website: "",
     notes: "",
+    bannerImage: "",
+    publicDescription: "",
   })),
   links: [],
   settings: {},
@@ -122,7 +124,7 @@ function validate(db) {
           if (!["https:", "http:"].includes(u.protocol))
             throw new Error("网址必须以 https:// 或 http:// 开头。");
         }
-      for (const value of [row.image, row.cover, row.logo, ...(row.photos || [])].filter(
+      for (const value of [row.image, row.cover, row.logo, row.bannerImage, ...(row.photos || [])].filter(
         Boolean,
       ))
         if (
@@ -131,6 +133,10 @@ function validate(db) {
         )
           throw new Error("本地图片路径无效。");
     }
+  for (const row of db.brands)
+    if (row.publicDescription != null &&
+        (typeof row.publicDescription !== "string" || row.publicDescription.length > 20000))
+      throw new Error("品牌公开介绍无效或过长。");
   for (const r of db.gyms) {
     if (
       r.brandIds &&

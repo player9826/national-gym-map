@@ -7,13 +7,15 @@ const image=createCanvas(200,150).encodeSync('png');
 const requests=[];
 const server=http.createServer((req,res)=>{
   requests.push(req.url);
-  if(['/one.png','/two.png','/three.png'].includes(req.url)){res.writeHead(200,{'content-type':'image/png'});res.end(image);return;}
+  if(['/one.png','/two.png','/three.png','/machine.png','/other-machine.png','/blocked-machine.png'].includes(req.url)){res.writeHead(200,{'content-type':'image/png'});res.end(image);return;}
   if(req.url==='/store/brand/series/'){
-    res.writeHead(200,{'content-type':'text/html'});res.end('<title>Nitro Plus</title><div id="content"><a href="compound-row-s5cr/"><h3>Compound Row S5CR</h3></a><a href="weight-stack-pins/"><h3>Weight Stack Pins</h3></a></div>');return;
+    res.writeHead(200,{'content-type':'text/html'});res.end('<title>Nitro Plus</title><div id="content"><div class="product-card"><a href="compound-row-s5cr/"><span class="image" style="background-image:url(/machine.png)"></span></a><a href="compound-row-s5cr/"><h3>Compound Row S5CR</h3></a></div><div class="product-card"><a href="another-row/"><img src="/other-machine.png" alt="Another Row"><h3>Another Row</h3></a></div><div class="product-card"><a href="blocked-row/"><img src="/blocked-machine.png" alt="Blocked Row"><h3>Blocked Row</h3></a></div><a href="weight-stack-pins/"><h3>Weight Stack Pins</h3></a></div>');return;
   }
   if(req.url==='/store/brand/series/compound-row-s5cr/'){
     res.writeHead(200,{'content-type':'text/html'});res.end('<title>Compound Row S5CR | Supplier</title><div id="content"><div class="category-image" style="background-image:url(/one.png)"></div><img src="/two.png" alt="Compound Row"><img src="/three.png" alt="Compound Row"><script type="application/ld+json">{"@type":"Product","name":"Seat Pad","image":"/bad-pad.png"}</script></div>');return;
   }
+  if(req.url==='/store/brand/series/another-row/'){res.writeHead(200,{'content-type':'text/html'});res.end('<h1>Another Row</h1><img src="/other-machine.png">');return;}
+  if(req.url==='/store/brand/series/blocked-row/'){res.writeHead(403,{'content-type':'text/html'});res.end('<h1>Access denied</h1>');return;}
   if(req.url==='/photo.png'){res.writeHead(200,{'content-type':'image/png'});res.end(image);return;}
   const content=req.url==='/catalog'?'<main><h1>Equipment</h1><div class="product"><a href="/product/press">Chest Press</a><a href="/product/blocked">Blocked</a><a href="/product/accessory">Accessory</a></div><form><input value="PRIVATE-FORM"><textarea>PRIVATE-NOTE</textarea></form><script>window.secret="PRIVATE-SCRIPT"</script></main>':
     req.url==='/product/blocked'?'<h1>Access denied</h1>':
@@ -49,11 +51,24 @@ const server=http.createServer((req,res)=>{
       chrome.downloads.download=async options=>{exported=JSON.parse(decodeURIComponent(options.url.slice(options.url.indexOf(',')+1)));return 1;};
       state.running=true;await capture(tab.id,origin);return exported;
     },origin);
-    assert.equal(nested.pages.length,2);
-    assert.equal(nested.pages[1].images.length,3);
+    assert.equal(nested.pages.length,4);
+    const row=nested.pages.find(p=>p.url.endsWith('/compound-row-s5cr/'));
+    assert.equal(row.images.length,4);
+    assert.equal(row.listingUrl,origin+'/store/brand/series/');
+    assert.equal(row.listingImageSource,origin+'/machine.png');
+    assert.equal(row.images[0].source,row.listingImageSource);
+    assert.ok(!row.images.some(img=>img.source.endsWith('/other-machine.png')));
+    assert.ok(nested.pages[0].html.includes(`src="${origin}/machine.png"`),'background listing image remains associated in sanitized HTML');
+    const other=nested.pages.find(p=>p.url.endsWith('/another-row/'));
+    assert.equal(other.images.length,1,'same listing/detail image is deduplicated');
+    const blocked=nested.pages.find(p=>p.url.endsWith('/blocked-row/'));
+    assert.equal(blocked.images.length,1);
+    assert.equal(blocked.images[0].source,origin+'/blocked-machine.png');
+    assert.ok(blocked.detailError);
+    assert.ok(!blocked.html.includes('Access denied'));
     assert.ok(!requests.includes('/bad-pad.png'));
     assert.ok(!requests.includes('/store/brand/series/weight-stack-pins/'));
     fs.mkdirSync('test-results',{recursive:true});fs.writeFileSync('test-results/browser-capture-extension.json',JSON.stringify({testedAt:new Date().toISOString(),scope:'local Chromium extension with fixture-only host pregrant and intercepted save dialog',passed:true,pages:bundle.pages.length,images:1,failures:bundle.failures,checks:['real extension service worker','normal tab navigation and isolated DOM extraction','image embedded','privacy fields excluded','product JSON-LD preserved','accessory excluded','403 excluded','created tabs closed and original preserved'],requests},null,2));
-    console.log('Extension local integration passed: 2 pages, 1 image, 1 excluded denied page; private fields removed.');
+    console.log('Extension local integration passed: listing + three detail candidates, exact pairing, duplicate exclusion, listing-only fallback, privacy removal.');
   }finally{await context?.close();server.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

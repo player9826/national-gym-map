@@ -37,6 +37,7 @@ import EquipmentClassification from "./EquipmentClassification";
 import SharedCatalogSettings from "./SharedCatalogSettings";
 import BrandLogo from "./BrandLogo";
 import GymThemePicker from "./GymThemePicker";
+import { COUNTRIES, countryOf, countryName } from "../electron/gym-location.mjs";
 
 export function GymForm({
   initial,
@@ -46,7 +47,7 @@ export function GymForm({
   run,
   brands = [],
 }) {
-  const [row, setRow] = useState(initial),
+  const [row, setRow] = useState(() => ({ ...initial, country: countryOf(initial) })),
     [tagText, setTagText] = useState((initial.tags || []).join("，"));
   const set = (key) => (e) => setRow({ ...row, [key]: e.target.value });
   const draft = () => ({
@@ -97,6 +98,14 @@ export function GymForm({
           value={row.themeColor}
           onChange={(themeColor) => setRow((current) => ({ ...current, themeColor }))}
         />
+        <Field label="国家/地区" full>
+          <select value={row.country} onChange={set("country")}>
+            {!COUNTRIES.some(([code]) => code === row.country) &&
+              <option value={row.country}>{countryName(row.country)}</option>}
+            {COUNTRIES.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
+          </select>
+        </Field>
+        {row.country === "CN" && <>
         <Field label="省份">
           <input value={row.province} onChange={set("province")} />
         </Field>
@@ -111,7 +120,8 @@ export function GymForm({
         <Field label="区县">
           <input value={row.district} onChange={set("district")} />
         </Field>
-        <Field label="详细地址">
+        </>}
+        <Field label="详细地址" full={row.country !== "CN"}>
           <input value={row.address} onChange={set("address")} />
         </Field>
         <div className="field full">
@@ -149,7 +159,8 @@ export function GymForm({
             </Field>
           </div>
           <small>
-            坐标采用 WGS84（World Geodetic System 1984，1984 世界大地坐标系）
+            坐标采用 WGS84（World Geodetic System 1984，1984 世界大地坐标系）。
+            可以稍后定位；仅填写地址不会自动生成地图位置。
           </small>
         </div>
         <div className="field">
@@ -270,7 +281,7 @@ export function GymForm({
   );
 }
 export function WebsiteImageChoices({ options = [], selected = "", disabled = false, onChange }) {
-  const choices = options.filter((option) => option.source && /^data:image\//.test(option.preview || "")).slice(0, 3);
+  const choices = options.filter((option) => option.source && /^data:image\//.test(option.preview || "")).slice(0, 4);
   if (!choices.length) return null;
   return (
     <section className="website-image-choices field full" aria-label="网站候选图片">
@@ -281,7 +292,7 @@ export function WebsiteImageChoices({ options = [], selected = "", disabled = fa
             aria-label={`选择网站图片 ${index + 1}`} aria-pressed={selected === option.source}
             onClick={() => onChange(option)}>
             <img src={option.preview} alt={`网站候选图片 ${index + 1}`} onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} />
-            <span>{selected === option.source ? "已选封面" : `图片 ${index + 1}`}</span>
+            <span>{option.origin === 'listing' ? '列表页' : '详情页'} · {selected === option.source ? "已选封面" : `图片 ${index + 1}`}</span>
           </button>
         ))}
       </div>
@@ -345,7 +356,7 @@ export function EquipmentForm({
       ...data,
       ...(website ? {
         image: current.image,
-        imageOptions: result.imageOptions.slice(0, 3),
+        imageOptions: result.imageOptions.slice(0, 4),
         imageSource: result.imageSource || result.imageOptions[0]?.source || "",
         thumbnail: result.thumbnail || result.imageOptions[0]?.preview || "",
         pendingWebImage: !!result.imageOptions[0]?.preview && result.pendingWebImage !== false,
@@ -786,6 +797,16 @@ export function BrandManager({
               onChange={(logo) => setRow((current) => ({ ...current, logo }))} />
             <small>上传后替换内置标识；移除上传图片后恢复内置标识，没有图片时显示品牌名称。</small>
           </div>
+          <div className="field" role="group" aria-label="品牌展示图"><span>品牌展示图</span>
+            <PhotoInput value={row.bannerImage || ""} category="brands" run={run}
+              onChange={(bannerImage) => setRow((current) => ({ ...current, bannerImage }))} />
+            {row.bannerImage && <div className="brand-banner-preview"><Picture src={row.bannerImage} alt="品牌展示图预览" thumbnail={false} /></div>}
+            <small>仅在器械库选中该品牌时横向铺满展示区，与品牌标识分别管理；图片会裁切为横向展示。</small>
+          </div>
+          <Field label="公开品牌介绍">
+            <textarea rows="4" value={row.publicDescription || ""} onChange={(e) => setRow({ ...row, publicDescription: e.target.value })} />
+            <small>介绍会随共享资料显示在公开网页；留空时不显示介绍文字。</small>
+          </Field>
           <Field label="官网地址">
             <input
               type="url"
@@ -794,7 +815,7 @@ export function BrandManager({
               onChange={(e) => setRow({ ...row, website: e.target.value })}
             />
           </Field>
-          <Field label="品牌备注">
+          <Field label="品牌备注（仅本机）">
             <textarea
               rows="5"
               value={row.notes || ""}

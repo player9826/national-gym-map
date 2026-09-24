@@ -69,3 +69,5 @@
 ## 公共发布与共享资料（1.4.0）
 
 `electron/public-release.cjs` 固定默认公共仓库、软件更新和共享地址，下载仅允许指定公共 GitHub 域名并限制大小、超时及重定向。`electron/shared-catalog.cjs` 使用白名单导出、清单哈希校验、共享标识映射和三方合并，私人字段保留本地。`src/SharedCatalogSettings.jsx` 提供检查、预览、确认、导出和修改建议入口。`shared/` 保存经确认的公开数据和图片，个人完整档案不进入仓库。
+
+全球离线底图由 `src/MapView.jsx` 加载本地 `public/world.json`、`world-cities.json` 与既有 `china.json`，不含在线切片入口；来源与精度见 `docs/offline-map-sources.md`。`src/GymListTags.jsx` 约束列表标签两行并将溢出内容引导到详情。网页列表图由 `electron/page-extraction.cjs` 按条目链接提取，`electron/web-import.cjs` 保留列表图并合并详情候选；同一图片选择组件用于单条和批量导入。

@@ -240,7 +240,7 @@ async function main() {
       await list(fixtures[i % 3].id).hover();
       await page.waitForTimeout(i % 4 === 0 ? 230 : 30);
     }
-    await page.getByRole("button", { name: "回到全国", exact: true }).click();
+    await page.getByRole("button", { name: "回到全球", exact: true }).click();
     await page.waitForTimeout(500);
     for (let i = 0; i < 6; i++) {
       await list("hover-b").hover();
@@ -265,7 +265,7 @@ async function main() {
       "bottom-left",
     ]) {
       await away();
-      await page.getByRole("button", { name: "回到全国", exact: true }).click();
+      await page.getByRole("button", { name: "回到全球", exact: true }).click();
       await page.waitForTimeout(500);
       const map = await page.locator('[data-testid="map"]').boundingBox();
       const m = await marker("hover-b").boundingBox();
@@ -315,7 +315,7 @@ async function main() {
     await open(list("hover-a"), "hover-a");
     await bounds();
     await away();
-    await page.getByRole("button", { name: "回到全国", exact: true }).click();
+    await page.getByRole("button", { name: "回到全球", exact: true }).click();
     await open(marker("hover-b"), "hover-b");
     await card.hover();
     // Programmatic wheel events keep the pointer over the preview while moving the map.

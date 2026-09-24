@@ -177,7 +177,7 @@ export function Status({ visited, onChange, disabled }) {
     </div>
   );
 }
-export function Picture({ src, alt, type = "equipment", className = "", thumbnail = true }) {
+export function Picture({ src, alt, type = "equipment", className = "", thumbnail = true, emptyLabel = true }) {
   const [failed, setFailed] = useState([]);
   useEffect(() => setFailed([]), [src]);
   const candidates = src ? [asset(src, { thumbnail: isWeb && thumbnail }), asset(src)] : [];
@@ -198,7 +198,7 @@ export function Picture({ src, alt, type = "equipment", className = "", thumbnai
       ) : (
         <MapPin size={32} strokeWidth={1.2} />
       )}
-      <span>{src ? "照片读取失败" : "暂无照片"}</span>
+      {(src || emptyLabel) && <span>{src ? "照片读取失败" : "暂无照片"}</span>}
     </div>
   );
 }

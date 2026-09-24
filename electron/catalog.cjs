@@ -5,6 +5,7 @@ const dns = require("node:dns").promises;
 const net = require("node:net");
 const cheerio = require("cheerio");
 const { atomic, validate, TAGS } = require("./storage.cjs");
+const { countryOf } = require("./gym-location.mjs");
 const {
   normalizeClassification,
   validateClassification,
@@ -17,6 +18,7 @@ function gym(input) {
     ...input,
     id: input.id || id(),
     name: text(input.name),
+    country: countryOf(input),
     province: text(input.province),
     city: text(input.city),
     district: text(input.district),
@@ -73,7 +75,7 @@ function equipment(input, { legacy = false, allowIncomplete = false } = {}) {
     { legacy },
   );
   validateClassification(row, { allowIncomplete: legacy || allowIncomplete });
-  for (const field of ['thumbnail', 'imageOptions', 'imageCandidates', 'pendingWebImage', 'captured', 'kind', 'success', 'warning', 'url'])
+  for (const field of ['thumbnail', 'imageOptions', 'imageCandidates', 'listingImageSource', 'listingUrl', 'pendingWebImage', 'captured', 'kind', 'success', 'warning', 'url'])
     delete row[field];
   return row;
 }
@@ -306,9 +308,11 @@ function prepareImport(store, { kind, raw }) {
     : [];
   const warnings = [];
   for (const brand of brands) {
-    if (brand.logo && !fs.existsSync(path.join(store.root, brand.logo))) {
-      warnings.push(`「${brand.name}」的品牌标识不在当前数据目录，将恢复内置标识或品牌名称。跨电脑转移图片请使用共享资料库或完整备份。`);
-      brand.logo = "";
+    for (const [field, label] of [["logo", "品牌标识"], ["bannerImage", "品牌展示图"]]) {
+      if (brand[field] && !fs.existsSync(path.join(store.root, brand[field]))) {
+        warnings.push(`「${brand.name}」的${label}不在当前数据目录，将清除图片引用。跨电脑转移图片请使用共享资料库或完整备份。`);
+        brand[field] = "";
+      }
     }
   }
   if (repeated) warnings.push(`${repeated} 条已有标识的记录将被更新。`);

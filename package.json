@@ -1,11 +1,12 @@
 {
   "name": "national-gym-map",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "private": true,
   "description": "全国健身房地图与个人器械档案",
   "author": "National Gym Map",
   "main": "electron/main.cjs",
   "scripts": {
+    "export:shared": "node scripts/export-current-shared.cjs",
     "dev": "vite --host 127.0.0.1",
     "start": "electron .",
     "build": "vite build",

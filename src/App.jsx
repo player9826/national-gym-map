@@ -27,6 +27,8 @@ import {
 import MapView from "./MapView";
 import GymPreview, { useGymPreview, gymAccent } from "./GymPreview";
 import BrandLogo from "./BrandLogo";
+import GymListTags from "./GymListTags";
+import { countryOf, countryName, gymLocation } from "../electron/gym-location.mjs";
 import "./detail-refresh.css";
 import EquipmentPicker from "./EquipmentPicker";
 import EquipmentFilters from "./EquipmentFilters";
@@ -175,6 +177,8 @@ export default function App() {
   }
   const gym = db.gyms.find((g) => g.id === selected),
     eq = db.equipment.find((e) => e.id === equipmentId);
+  const selectedBrand = db.brands.find((b) => b.id === eqGroup);
+  const profileBrand = db.brands.find((b) => b.id === modal?.brandId);
   const missingRoute = isWeb && status.ready && (routeInvalid || (selected && !gym) || (equipmentId && !eq));
   useEffect(() => {
     if (isWeb) document.title = `${eq?.name || gym?.name || (page === "equipment" ? "器械图鉴" : "探索场馆")} · 全国健身房地图`;
@@ -204,7 +208,7 @@ export default function App() {
       db.gyms
         .filter(
           (g) =>
-            `${g.name} ${g.province} ${g.city} ${g.district} ${g.address} ${g.tags?.join(" ")}`
+            `${g.name} ${countryName(countryOf(g))} ${g.province} ${g.city} ${g.district} ${g.address} ${g.tags?.join(" ")}`
               .toLowerCase()
               .includes(query.toLowerCase()) &&
             (!city || (g.city || "").replace(/市$/, "") === city.replace(/市$/, "")) &&
@@ -308,6 +312,21 @@ export default function App() {
     );
   }
   const linked = gym ? db.links.filter((l) => l.gymId === gym.id) : [];
+  function showBrand(id) {
+    if (isWeb) setRouteInvalid(false);
+    setSelected(null);
+    setPage("equipment");
+    setEqType("");
+    setEqFreeType("");
+    setEqApplication("");
+    setEqMode("brand");
+    setEqGroup(id);
+    setEqSeries("");
+    setEqTag("");
+    setEqLoading("");
+    setEqQuery("");
+    setEquipmentId(null);
+  }
   function brandTags(g) {
     return (
       <div className="brand-tags">
@@ -317,21 +336,7 @@ export default function App() {
             b && (
               <button
                 key={id}
-                onClick={() => {
-                  if (isWeb) setRouteInvalid(false);
-                  setSelected(null);
-                  setPage("equipment");
-                  setEqType("");
-                  setEqFreeType("");
-                  setEqApplication("");
-                  setEqMode("brand");
-                  setEqGroup(id);
-                  setEqSeries("");
-                  setEqTag("");
-                  setEqLoading("");
-                  setEqQuery("");
-                  setEquipmentId(null);
-                }}
+                onClick={() => showBrand(id)}
               >
                 {b.name}
                 <ArrowUpRight size={12} />
@@ -412,7 +417,6 @@ export default function App() {
         <aside className="gym-sidebar">
           <div className="sidebar-heading">
             <div>
-              <span className="eyebrow">{isWeb ? "发现下一站" : "我的场馆"}</span>
               <h2>
                 健身房档案<span>{db.gyms.length}</span>
               </h2>
@@ -425,46 +429,6 @@ export default function App() {
               }
             />}
           </div>
-          {isWeb ? <div className="stats">
-            <div><strong>{db.gyms.length}</strong><span>收录场馆</span></div>
-            <div><strong>{new Set(db.gyms.map(g => g.city).filter(Boolean)).size}</strong><span>覆盖城市</span></div>
-            <div><strong>{db.equipment.length}</strong><span>器械档案</span></div>
-          </div> : <div className="stats">
-            <div>
-              <strong>
-                {db.gyms
-                  .filter((g) => g.visited)
-                  .length.toString()
-                  .padStart(2, "0")}
-              </strong>
-              <span>
-                <i className="dot blue" />
-                已去过
-              </span>
-            </div>
-            <div>
-              <strong>
-                {db.gyms
-                  .filter((g) => !g.visited)
-                  .length.toString()
-                  .padStart(2, "0")}
-              </strong>
-              <span>
-                <i className="dot gray" />
-                未去过
-              </span>
-            </div>
-            <div>
-              <strong>
-                {new Set(
-                  db.gyms.filter((g) => g.visited && g.city).map((g) => g.city),
-                ).size
-                  .toString()
-                  .padStart(2, "0")}
-              </strong>
-              <span>到访城市</span>
-            </div>
-          </div>}
           <div className="gym-search">
             <div className="search-input">
               <Search size={17} />
@@ -488,7 +452,7 @@ export default function App() {
                 value={city}
                 onChange={(e) => chooseCity(e.target.value)}
               >
-                <option value="">全国城市</option>
+                <option value="">全部城市</option>
                 {cities.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
@@ -502,16 +466,17 @@ export default function App() {
             </div>
             {!isWeb && <div className="segmented filter-status">
               {[
-                ["all", "全部"],
-                ["visited", "已去过"],
-                ["unvisited", "未去过"],
-              ].map(([value, label]) => (
+                ["all", "全部", db.gyms.length],
+                ["visited", "已去过", db.gyms.filter(g => g.visited).length],
+                ["unvisited", "未去过", db.gyms.filter(g => !g.visited).length],
+              ].map(([value, label, count]) => (
                 <button
                   className={visitFilter === value ? "selected" : ""}
+                  aria-label={label}
                   key={value}
                   onClick={() => setVisitFilter(value)}
                 >
-                  {label}
+                  {label} <span>{count}</span>
                 </button>
               ))}
             </div>}
@@ -542,7 +507,7 @@ export default function App() {
             )}
           </div>
           <div className="list-heading">
-            <span>{visibleGyms.length} 个场馆</span>
+            <span>{visibleGyms.length} 个场馆 · {isWeb ? "覆盖" : "到访"} {new Set(db.gyms.filter(g => (isWeb || g.visited) && g.city).map(g => g.city)).size} 城市</span>
             <select
               aria-label="健身房排序"
               value={sort}
@@ -575,16 +540,11 @@ export default function App() {
                   </div>
                   <p className="location-line">
                     <MapPin size={13} />
-                    {[g.city, g.district].filter(Boolean).join(" / ") ||
-                      "位置待补充"}
+                    <span className="gym-location" title={gymLocation(g)}>{gymLocation(g) || "位置待补充"}</span>
                     {!isWeb && <span className="score">{g.score ?? "待评分"}</span>}
                   </p>
-                  <p className="one-line">{isWeb ? (g.address || "地址待补充") : (g.description || "暂无简介")}</p>
                 </button>
-                <div className="parallel-tags">
-                  <Tags values={(g.tags || []).slice(0, 3)} />
-                  {brandTags(g)}
-                </div>
+                <GymListTags tags={g.tags || []} brands={(g.brandIds || []).map(id => db.brands.find(b => b.id === id)).filter(Boolean)} onBrand={showBrand} onMore={() => showGym(g.id)}/>
                 <div className="gym-item-foot">
                   {!isWeb && <button
                     className={`visit-pill ${g.visited ? "visited" : ""}`}
@@ -709,12 +669,16 @@ export default function App() {
         <main className="equipment-page">
           <div className="equipment-header">
             <div>
-              <span className="eyebrow">{isWeb ? "认识每一件器械" : "我的器械档案"}</span>
               <h2>
                 器械库 <span>{db.equipment.length}</span>
               </h2>
             </div>
             {!isWeb && <div className="actions">
+              <details className="equipment-actions-menu" onClick={(event) => {
+                if (event.target.closest("button")) event.currentTarget.open = false;
+              }}>
+                <summary>管理与导入</summary>
+                <div className="equipment-actions-list">
               <button
                 onClick={() => requireData(() => setModal({ type: "brands" }))}
               >
@@ -743,6 +707,8 @@ export default function App() {
                 <Download size={16} />
                 批量网页导入
               </button>
+                </div>
+              </details>
               <button
                 className="primary"
                 onClick={() =>
@@ -760,7 +726,7 @@ export default function App() {
             </div>}
           </div>
           <div className="equipment-type-tabs" aria-label="器械顶级分类">
-            {[["", "全部"], ...EQUIPMENT_TYPES].map(([type, label]) => (
+            {[["", "全部"], ...EQUIPMENT_TYPES.filter(([type]) => type !== "fixed")].map(([type, label]) => (
               <button
                 key={type}
                 className={eqType === type ? "selected" : ""}
@@ -870,16 +836,18 @@ export default function App() {
             </aside>
             <section className="equipment-main" ref={equipmentScroll} onScroll={event => setBackTop(event.currentTarget.scrollTop > event.currentTarget.clientHeight)}>
               <div className="equipment-toolbar">
-                <EquipmentFilters value={eqFilters} onChange={changeEqFilters} equipment={db.equipment} brands={db.brands} showType={false} showBrand={eqMode === 'part'} />
-                <select
+                <EquipmentFilters value={eqFilters} onChange={changeEqFilters} equipment={db.equipment} brands={db.brands} showBrand={eqMode === 'part'} collapsible sortControl={<select
                   aria-label="器械排序"
                   value={eqSort}
                   onChange={(e) => setEqSort(e.target.value)}
                 >
                   <option value="name">名称排序</option>
                   {!isWeb && <option value="updated">最近更新</option>}
-                </select>
+                </select>} />
               </div>
+              {selectedBrand?.bannerImage && <button className="equipment-brand-banner" aria-label={`了解品牌 ${selectedBrand.name}`} onClick={() => setModal({type:"brand-profile", brandId:selectedBrand.id})}>
+                <Picture src={selectedBrand.bannerImage} alt={selectedBrand.name} thumbnail={false} />
+              </button>}
               <div className="equipment-count">
                 <span>
                   {[db.brands.find(b => b.id === eqGroup)?.name, eqTag && partName(eqTag)].filter(Boolean).join(' · ') || '全部器械'}
@@ -893,40 +861,22 @@ export default function App() {
                     key={e.id}
                     onClick={() => setEquipmentId(e.id)}
                   >
-                    <Picture src={e.image} alt={e.name} />
+                    <Picture src={e.image} alt={e.name} emptyLabel={false} />
                     <div className="equipment-card-body">
-                      <span className="eyebrow">
-                        <BrandLogo
-                          brand={db.brands.find((b) => b.id === e.brandId)}
-                        />
-                      </span>
-                      <h3>{e.name}</h3>
-                      {e.series && <small className="equipment-series">系列 · {e.series}</small>}
-                      <p>
-                        {equipmentType(e) === "fixed" ? ["固定器械", e.loading].filter(Boolean).join(" · ") : equipmentSummary(e)}
-                        <span>{e.model || "型号未填写"}</span>
-                      </p>
-                      <PartTags
-                        parts={
-                          equipmentType(e) === "fixed"
-                            ? (e.parts ?? [e.part])
-                            : []
-                        }
-                      />
-                      <Tags
-                        colored
-                        values={equipmentType(e) === "fixed" ? e.tags : []}
-                      />
+                      <div className="equipment-card-brand">
+                        <BrandLogo brand={db.brands.find((b) => b.id === e.brandId)} />
+                      </div>
+                      <h3 title={e.name}>{e.name}</h3>
+                      {e.series && <span className="equipment-card-series" title={e.series}>系列 · {e.series}</span>}
+                      <div className="equipment-card-tags" title={[...(e.parts ?? [e.part]).filter(Boolean).map(partName), ...(e.tags || []), e.loading].filter(Boolean).join(" · ")}>
+                        <PartTags parts={equipmentType(e) === "fixed" ? (e.parts ?? [e.part]).slice(0, 1) : []} />
+                        <Tags colored values={equipmentType(e) === "fixed" ? (e.tags || []).slice(0, 1) : [equipmentSummary(e)]} />
+                        {equipmentType(e) === "fixed" && e.loading && <span className="equipment-loading">{e.loading}</span>}
+                        {equipmentType(e) === "fixed" && ((e.parts ?? [e.part]).length + (e.tags || []).length > 2) && <small>更多</small>}
+                      </div>
                       <div className="equipment-card-foot">
-                        <span>
-                          <MapPin size={13} />
-                          {
-                            db.links.filter((l) => l.equipmentId === e.id)
-                              .length
-                          }{" "}
-                          家健身房
-                        </span>
-                        <ArrowUpRight size={16} />
+                        {e.model && <span className="equipment-model" title={e.model}>{e.model}</span>}
+                        <span><MapPin size={12} />{db.links.filter((l) => l.equipmentId === e.id).length} 家健身房</span>
                       </div>
                     </div>
                   </button>
@@ -993,9 +943,7 @@ export default function App() {
           )}
           <div className="detail-body">
             <span className="eyebrow">
-              {[gym.province, gym.city, gym.district]
-                .filter(Boolean)
-                .join(" / ") || "位置待补充"}
+              {gymLocation(gym) || "位置待补充"}
             </span>
             <h2>{gym.name}</h2>
             {!isWeb && <Status
@@ -1149,7 +1097,7 @@ export default function App() {
                         setModal({ type: "photo", src: e.image, name: e.name })
                       }
                     >
-                      <Picture src={e.image} alt={e.name} />
+                      <Picture src={e.image} alt={e.name} emptyLabel={false} />
                     </button>
                     <button
                       className="linked-open"
@@ -1218,7 +1166,7 @@ export default function App() {
                 setModal({ type: "photo", src: eq.image, name: eq.name })
               }
             >
-              <Picture src={eq.image} alt={eq.name} />
+              <Picture src={eq.image} alt={eq.name} emptyLabel={false} />
             </button>
             <div>
               <span className="eyebrow">
@@ -1226,9 +1174,9 @@ export default function App() {
               </span>
               <h2>{eq.name}</h2>
               {eq.series && <p className="equipment-series">系列 · {eq.series}</p>}
-              <p className="muted">
-                {equipmentType(eq) === "fixed" ? ["固定器械", eq.loading].filter(Boolean).join(" · ") : equipmentSummary(eq)} · {eq.model || "型号未填写"}
-              </p>
+              {(eq.model || (equipmentType(eq) === "fixed" ? eq.loading : equipmentSummary(eq))) && <p className="muted">
+                {[equipmentType(eq) === "fixed" ? eq.loading : equipmentSummary(eq), eq.model].filter(Boolean).join(" · ")}
+              </p>}
               <PartTags
                 parts={
                   equipmentType(eq) === "fixed" ? (eq.parts ?? [eq.part]) : []
@@ -1238,7 +1186,7 @@ export default function App() {
                 colored
                 values={equipmentType(eq) === "fixed" ? eq.tags : []}
               />
-              {!isWeb && <p className="description">{eq.notes || "暂无备注"}</p>}
+              {!isWeb && eq.notes && <p className="description">{eq.notes}</p>}
               {eq.productUrl && (
                 <button
                   className="text-button"
@@ -1285,7 +1233,7 @@ export default function App() {
                     <div>
                       <strong>{g.name}</strong>
                       <small>
-                        {g.city || "城市待补充"} · {l.quantity} 台 · {l.status}
+                        {gymLocation(g) || "位置待补充"} · {l.quantity} 台 · {l.status}
                       </small>
                     </div>
                     <ArrowUpRight size={18} />
@@ -1298,6 +1246,17 @@ export default function App() {
           </section>
         </Modal>
       )}
+      {profileBrand && modal?.type === "brand-profile" && <Modal title={profileBrand.name} wide onClose={() => setModal(null)}>
+        <div className="brand-profile">
+          {profileBrand.bannerImage && <Picture src={profileBrand.bannerImage} alt={profileBrand.name} thumbnail={false} />}
+          <div className="brand-profile-content">
+            <BrandLogo brand={profileBrand} />
+            {profileBrand.publicDescription && <p>{profileBrand.publicDescription}</p>}
+            <span>{db.equipment.filter((e) => e.brandId === profileBrand.id).length} 款器械</span>
+            {profileBrand.website && <button className="text-button" onClick={() => run(() => openExternal(profileBrand.website))}>访问品牌官网 <ExternalLink size={15}/></button>}
+          </div>
+        </div>
+      </Modal>}
       {!isWeb && modal?.type === "gym" && (
         <GymForm
           brands={db.brands}

@@ -1,3 +1,4 @@
+import { gymLocation } from "../electron/gym-location.mjs";
 import React, {
   useCallback,
   useEffect,
@@ -249,8 +250,7 @@ export default function GymPreview({ controller, gym, count, onSelect }) {
         </div>
         <p className="gym-preview-location">
           <MapPin size={13} />
-          {[gym.city, gym.district].filter(Boolean).join(" / ") ||
-            "城市 / 区域待补充"}
+          {gymLocation(gym) || "位置待补充"}
         </p>
         <div className="gym-preview-facts">
           {!isWeb && <span className="gym-preview-visit">

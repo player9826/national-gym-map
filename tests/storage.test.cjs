@@ -114,3 +114,19 @@ test("referential integrity rejects orphan equipment and relationships", (t) => 
   assert.throws(() => store.save(db), /品牌/);
   assert.equal(store.db.equipment.length, 0);
 });
+test("brand banner and public introduction validate while older brands remain valid", (t) => {
+  const { store, root } = fixture(t);
+  store.configure(root);
+  const db = structuredClone(store.db);
+  delete db.brands[0].bannerImage;
+  delete db.brands[0].publicDescription;
+  store.save(db);
+  db.brands[0].bannerImage = "brands/banner.png";
+  db.brands[0].publicDescription = "品牌简介";
+  store.save(db);
+  db.brands[0].bannerImage = "../private.png";
+  assert.throws(() => store.save(db), /本地图片路径无效/);
+  db.brands[0].bannerImage = "";
+  db.brands[0].publicDescription = { private: true };
+  assert.throws(() => store.save(db), /品牌公开介绍无效/);
+});

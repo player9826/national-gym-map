@@ -311,6 +311,8 @@ function createBatchImporter(store, web) {
             name: p.name || "",
             model: p.model || "",
             imageSource: p.imageSource || "",
+            listingImageSource: p.listingImageSource || "",
+            listingUrl: p.listingUrl || "",
             ...(p.thumbnail ? {thumbnail: p.thumbnail} : {}),
             ...(p.imageOptions ? {imageOptions: p.imageOptions} : {}),
             productUrl: p.url,
@@ -364,6 +366,11 @@ function createBatchImporter(store, web) {
       row = batch.candidates.find((r) => r.id === candidateId);
       if (!row || row.status === "imported") throw new Error("候选已删除或已导入。");
       if (result.success === false || result.kind === "listing") {
+        if (result.imageOptions?.length) {
+          row.imageOptions = result.imageOptions;
+          row.thumbnail = result.thumbnail;
+          row.imageSource = result.imageSource;
+        }
         row.error =
           result.success === false
             ? result
