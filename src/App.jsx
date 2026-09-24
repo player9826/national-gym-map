@@ -177,6 +177,8 @@ export default function App() {
   }
   const gym = db.gyms.find((g) => g.id === selected),
     eq = db.equipment.find((e) => e.id === equipmentId);
+  const selectedBrand = db.brands.find((b) => b.id === eqGroup);
+  const profileBrand = db.brands.find((b) => b.id === modal?.brandId);
   const missingRoute = isWeb && status.ready && (routeInvalid || (selected && !gym) || (equipmentId && !eq));
   useEffect(() => {
     if (isWeb) document.title = `${eq?.name || gym?.name || (page === "equipment" ? "器械图鉴" : "探索场馆")} · 全国健身房地图`;
@@ -672,6 +674,11 @@ export default function App() {
               </h2>
             </div>
             {!isWeb && <div className="actions">
+              <details className="equipment-actions-menu" onClick={(event) => {
+                if (event.target.closest("button")) event.currentTarget.open = false;
+              }}>
+                <summary>管理与导入</summary>
+                <div className="equipment-actions-list">
               <button
                 onClick={() => requireData(() => setModal({ type: "brands" }))}
               >
@@ -700,6 +707,8 @@ export default function App() {
                 <Download size={16} />
                 批量网页导入
               </button>
+                </div>
+              </details>
               <button
                 className="primary"
                 onClick={() =>
@@ -717,7 +726,7 @@ export default function App() {
             </div>}
           </div>
           <div className="equipment-type-tabs" aria-label="器械顶级分类">
-            {[["", "全部"], ...EQUIPMENT_TYPES].map(([type, label]) => (
+            {[["", "全部"], ...EQUIPMENT_TYPES.filter(([type]) => type !== "fixed")].map(([type, label]) => (
               <button
                 key={type}
                 className={eqType === type ? "selected" : ""}
@@ -827,7 +836,7 @@ export default function App() {
             </aside>
             <section className="equipment-main" ref={equipmentScroll} onScroll={event => setBackTop(event.currentTarget.scrollTop > event.currentTarget.clientHeight)}>
               <div className="equipment-toolbar">
-                <EquipmentFilters value={eqFilters} onChange={changeEqFilters} equipment={db.equipment} brands={db.brands} showType={false} showBrand={eqMode === 'part'} sortControl={<select
+                <EquipmentFilters value={eqFilters} onChange={changeEqFilters} equipment={db.equipment} brands={db.brands} showBrand={eqMode === 'part'} collapsible sortControl={<select
                   aria-label="器械排序"
                   value={eqSort}
                   onChange={(e) => setEqSort(e.target.value)}
@@ -836,6 +845,9 @@ export default function App() {
                   {!isWeb && <option value="updated">最近更新</option>}
                 </select>} />
               </div>
+              {selectedBrand?.bannerImage && <button className="equipment-brand-banner" aria-label={`了解品牌 ${selectedBrand.name}`} onClick={() => setModal({type:"brand-profile", brandId:selectedBrand.id})}>
+                <Picture src={selectedBrand.bannerImage} alt={selectedBrand.name} thumbnail={false} />
+              </button>}
               <div className="equipment-count">
                 <span>
                   {[db.brands.find(b => b.id === eqGroup)?.name, eqTag && partName(eqTag)].filter(Boolean).join(' · ') || '全部器械'}
@@ -849,13 +861,13 @@ export default function App() {
                     key={e.id}
                     onClick={() => setEquipmentId(e.id)}
                   >
-                    <Picture src={e.image} alt={e.name} />
+                    <Picture src={e.image} alt={e.name} emptyLabel={false} />
                     <div className="equipment-card-body">
                       <div className="equipment-card-brand">
                         <BrandLogo brand={db.brands.find((b) => b.id === e.brandId)} />
-                        {e.series && <span className="equipment-series" title={e.series}>— {e.series}</span>}
                       </div>
                       <h3 title={e.name}>{e.name}</h3>
+                      {e.series && <span className="equipment-card-series" title={e.series}>系列 · {e.series}</span>}
                       <div className="equipment-card-tags" title={[...(e.parts ?? [e.part]).filter(Boolean).map(partName), ...(e.tags || []), e.loading].filter(Boolean).join(" · ")}>
                         <PartTags parts={equipmentType(e) === "fixed" ? (e.parts ?? [e.part]).slice(0, 1) : []} />
                         <Tags colored values={equipmentType(e) === "fixed" ? (e.tags || []).slice(0, 1) : [equipmentSummary(e)]} />
@@ -863,7 +875,7 @@ export default function App() {
                         {equipmentType(e) === "fixed" && ((e.parts ?? [e.part]).length + (e.tags || []).length > 2) && <small>更多</small>}
                       </div>
                       <div className="equipment-card-foot">
-                        <span className="equipment-model" title={e.model || ""}>{e.model || ""}</span>
+                        {e.model && <span className="equipment-model" title={e.model}>{e.model}</span>}
                         <span><MapPin size={12} />{db.links.filter((l) => l.equipmentId === e.id).length} 家健身房</span>
                       </div>
                     </div>
@@ -1085,7 +1097,7 @@ export default function App() {
                         setModal({ type: "photo", src: e.image, name: e.name })
                       }
                     >
-                      <Picture src={e.image} alt={e.name} />
+                      <Picture src={e.image} alt={e.name} emptyLabel={false} />
                     </button>
                     <button
                       className="linked-open"
@@ -1154,7 +1166,7 @@ export default function App() {
                 setModal({ type: "photo", src: eq.image, name: eq.name })
               }
             >
-              <Picture src={eq.image} alt={eq.name} />
+              <Picture src={eq.image} alt={eq.name} emptyLabel={false} />
             </button>
             <div>
               <span className="eyebrow">
@@ -1162,9 +1174,9 @@ export default function App() {
               </span>
               <h2>{eq.name}</h2>
               {eq.series && <p className="equipment-series">系列 · {eq.series}</p>}
-              <p className="muted">
-                {equipmentType(eq) === "fixed" ? ["固定器械", eq.loading].filter(Boolean).join(" · ") : equipmentSummary(eq)} · {eq.model || "型号未填写"}
-              </p>
+              {(eq.model || (equipmentType(eq) === "fixed" ? eq.loading : equipmentSummary(eq))) && <p className="muted">
+                {[equipmentType(eq) === "fixed" ? eq.loading : equipmentSummary(eq), eq.model].filter(Boolean).join(" · ")}
+              </p>}
               <PartTags
                 parts={
                   equipmentType(eq) === "fixed" ? (eq.parts ?? [eq.part]) : []
@@ -1174,7 +1186,7 @@ export default function App() {
                 colored
                 values={equipmentType(eq) === "fixed" ? eq.tags : []}
               />
-              {!isWeb && <p className="description">{eq.notes || "暂无备注"}</p>}
+              {!isWeb && eq.notes && <p className="description">{eq.notes}</p>}
               {eq.productUrl && (
                 <button
                   className="text-button"
@@ -1234,6 +1246,17 @@ export default function App() {
           </section>
         </Modal>
       )}
+      {profileBrand && modal?.type === "brand-profile" && <Modal title={profileBrand.name} wide onClose={() => setModal(null)}>
+        <div className="brand-profile">
+          {profileBrand.bannerImage && <Picture src={profileBrand.bannerImage} alt={profileBrand.name} thumbnail={false} />}
+          <div className="brand-profile-content">
+            <BrandLogo brand={profileBrand} />
+            {profileBrand.publicDescription && <p>{profileBrand.publicDescription}</p>}
+            <span>{db.equipment.filter((e) => e.brandId === profileBrand.id).length} 款器械</span>
+            {profileBrand.website && <button className="text-button" onClick={() => run(() => openExternal(profileBrand.website))}>访问品牌官网 <ExternalLink size={15}/></button>}
+          </div>
+        </div>
+      </Modal>}
       {!isWeb && modal?.type === "gym" && (
         <GymForm
           brands={db.brands}

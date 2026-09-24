@@ -96,8 +96,11 @@ async function main() {
       free_weight: "自由力量",
       cable_station: "龙门架",
     };
+    await page.locator(".equipment-main .equipment-advanced > summary").click();
+    const libraryType = page.locator(".equipment-main").getByLabel("选择器械类型", { exact: true });
     for (const [type, label] of Object.entries(labels)) {
-      await page
+      if (type === "fixed") await libraryType.selectOption("fixed");
+      else await page
         .locator(".equipment-type-tabs button")
         .filter({ hasText: label })
         .click();
@@ -134,10 +137,7 @@ async function main() {
     checks.push(
       "library four filters, fixed tags, free four subtypes, cardio/cable hide fixed filters",
     );
-    await page
-      .locator(".equipment-type-tabs button")
-      .filter({ hasText: "固定器械" })
-      .click();
+    await libraryType.selectOption("fixed");
     await page.locator(".equipment-card").click();
     await page.getByRole("button", { name: "编辑器械", exact: true }).click();
     const edit = page.getByRole("dialog", { name: "编辑器械", exact: true });

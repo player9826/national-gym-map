@@ -106,6 +106,14 @@ async function main() {
     await page.locator('.equipment-sidebar .group-list').getByRole('button', { name: new RegExp(brand.name) }).first().click();
     const brandCount = catalog.equipment.filter(e => e.brandId === brand.id).length;
     await expect(page.locator('.equipment-card')).toHaveCount(brandCount);
+    await expect(page.getByRole('combobox', { name: '搜索字段', exact: true })).not.toBeVisible();
+    await page.locator('.equipment-advanced > summary').click();
+    await page.getByRole('combobox', { name: '搜索字段', exact: true }).selectOption('name');
+    await page.getByRole('combobox', { name: '选择器械类型', exact: true }).selectOption('fixed');
+    await expect(page.locator('.equipment-card')).toHaveCount(catalog.equipment.filter(e => e.brandId === brand.id && e.equipmentType === 'fixed').length);
+    await page.getByRole('combobox', { name: '选择器械类型', exact: true }).selectOption('');
+    await page.getByRole('combobox', { name: '搜索字段', exact: true }).selectOption('all');
+    await page.locator('.equipment-advanced > summary').click();
     const search = page.getByRole('textbox', { name: '搜索器械', exact: true });
     await search.fill(equipment.name);
     await expect(page.locator('.equipment-card').first()).toBeVisible();

@@ -797,6 +797,16 @@ export function BrandManager({
               onChange={(logo) => setRow((current) => ({ ...current, logo }))} />
             <small>上传后替换内置标识；移除上传图片后恢复内置标识，没有图片时显示品牌名称。</small>
           </div>
+          <div className="field" role="group" aria-label="品牌展示图"><span>品牌展示图</span>
+            <PhotoInput value={row.bannerImage || ""} category="brands" run={run}
+              onChange={(bannerImage) => setRow((current) => ({ ...current, bannerImage }))} />
+            {row.bannerImage && <div className="brand-banner-preview"><Picture src={row.bannerImage} alt="品牌展示图预览" thumbnail={false} /></div>}
+            <small>仅在器械库选中该品牌时横向铺满展示区，与品牌标识分别管理；图片会裁切为横向展示。</small>
+          </div>
+          <Field label="公开品牌介绍">
+            <textarea rows="4" value={row.publicDescription || ""} onChange={(e) => setRow({ ...row, publicDescription: e.target.value })} />
+            <small>介绍会随共享资料显示在公开网页；留空时不显示介绍文字。</small>
+          </Field>
           <Field label="官网地址">
             <input
               type="url"
@@ -805,7 +815,7 @@ export function BrandManager({
               onChange={(e) => setRow({ ...row, website: e.target.value })}
             />
           </Field>
-          <Field label="品牌备注">
+          <Field label="品牌备注（仅本机）">
             <textarea
               rows="5"
               value={row.notes || ""}

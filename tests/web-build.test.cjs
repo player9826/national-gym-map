@@ -13,12 +13,14 @@ function fixture(t) {
   const source = path.join(root, 'shared');
   const output = path.join(root, 'site');
   fs.mkdirSync(path.join(source, 'images/gyms'), { recursive: true });
+  fs.mkdirSync(path.join(source, 'images/brands'), { recursive: true });
   const image = createCanvas(2000, 1000);
   image.getContext('2d').fillRect(0, 0, 2000, 1000);
   const imageBytes = image.encodeSync('png');
   fs.writeFileSync(path.join(source, 'images/gyms/cover.png'), imageBytes);
+  fs.writeFileSync(path.join(source, 'images/brands/banner.png'), imageBytes);
   const catalog = {
-    brands: [{ id: 'brand', name: 'Public brand', notes: 'PRIVATE' }],
+    brands: [{ id: 'brand', name: 'Public brand', bannerImage: 'brands/banner.png', publicDescription: 'Public introduction', notes: 'PRIVATE' }],
     gyms: [{ id: 'gym', name: 'Public gym', lat: null, lng: null, cover: 'gyms/cover.png', photos: [], visited: true, notes: 'PRIVATE', description: 'PRIVATE', reviewUrl: 'https://private.test', visitDate: '2026-01-01' }],
     equipment: [{ id: 'eq', name: 'Public bike', brandId: 'brand', equipmentType: 'cardio', parts: [], tags: [], notes: 'PRIVATE' }],
     links: [{ id: 'link', gymId: 'gym', equipmentId: 'eq', quantity: 1, notes: 'PRIVATE' }],
@@ -29,7 +31,10 @@ function fixture(t) {
   const manifest = {
     format: 'national-gym-map-shared', version: 1, sourceId: 'publisher', updatedAt: '2026-09-21T00:00:00.000Z',
     catalog: { path: 'catalog.json', size: catalogBytes.length, sha256: hash(catalogBytes) },
-    images: [{ path: 'images/gyms/cover.png', size: imageBytes.length, sha256: hash(imageBytes) }],
+    images: [
+      { path: 'images/gyms/cover.png', size: imageBytes.length, sha256: hash(imageBytes) },
+      { path: 'images/brands/banner.png', size: imageBytes.length, sha256: hash(imageBytes) },
+    ],
   };
   const saveManifest = () => fs.writeFileSync(path.join(source, 'manifest.json'), JSON.stringify(manifest));
   saveManifest();
@@ -52,6 +57,8 @@ test('website exports only public facts, verified indexes and smaller metadata-f
     assert.equal(result.manifest[key].sha256, hash(bytes));
   }
   const images = JSON.parse(fs.readFileSync(path.join(output, 'data/images.json')));
+  assert.ok(catalogText.includes('Public introduction'));
+  assert.ok(images['brands/banner.png'].detail);
   const thumb = await loadImage(path.join(output, images['gyms/cover.png'].thumbnail));
   const detail = await loadImage(path.join(output, images['gyms/cover.png'].detail));
   assert.deepEqual([thumb.width, thumb.height], [480, 240]);

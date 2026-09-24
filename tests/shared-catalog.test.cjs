@@ -88,6 +88,34 @@ test('brand logos share, cache, update and preserve a subscriber replacement', a
   assert.equal(JSON.parse(fs.readFileSync(path.join(destination, 'catalog.json'))).brands[0].logo, undefined);
   assert.ok(!fs.existsSync(path.join(destination, 'images', first)));
 });
+test('brand banner and public introduction share without private notes', async t => {
+  const { publisher, subscriber, destination, publish, api, preview } = fixture(t);
+  const { saveImage, upsert } = require('../electron/catalog.cjs');
+  const banner = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 2]);
+  const bannerImage = saveImage(publisher, banner, 'brands');
+  upsert(publisher, 'brands', {
+    ...publisher.db.brands[0], bannerImage, publicDescription: '公开品牌介绍', notes: '私人备注',
+  });
+  publish();
+  const data = JSON.parse(fs.readFileSync(path.join(destination, 'catalog.json')));
+  const manifest = JSON.parse(fs.readFileSync(path.join(destination, 'manifest.json')));
+  assert.equal(data.brands[0].publicDescription, '公开品牌介绍');
+  assert.equal(data.brands[0].bannerImage, bannerImage);
+  assert.equal(data.brands[0].notes, undefined);
+  assert.ok(manifest.images.some(item => item.path === `images/${bannerImage}`));
+  const draft = await preview();
+  await api.sharedApply({ token: draft.token });
+  const imported = subscriber.db.brands.find(row => row.name === publisher.db.brands[0].name);
+  assert.equal(imported.publicDescription, '公开品牌介绍');
+  assert.equal(imported.notes, '');
+  assert.match(imported.bannerImage, /^brands\/shared-/);
+  assert.deepEqual(fs.readFileSync(path.join(subscriber.root, imported.bannerImage)), banner);
+  exportShared(publisher, { destination, includeImages: false });
+  const withoutImages = JSON.parse(fs.readFileSync(path.join(destination, 'catalog.json')));
+  assert.equal(withoutImages.brands[0].bannerImage, undefined);
+  assert.equal(withoutImages.brands[0].publicDescription, '公开品牌介绍');
+  assert.ok(!fs.existsSync(path.join(destination, 'images', bannerImage)));
+});
 test('public export omits personal fields and only packages referenced images', t => {
   const { destination, publisher } = fixture(t);
   const text = fs.readFileSync(path.join(destination, 'catalog.json'), 'utf8');

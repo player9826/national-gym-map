@@ -32,14 +32,17 @@ async function main() {
       const metrics = await page.evaluate(() => {
         const card = document.querySelector('.gym-item');
         const tags = card.querySelector('.gym-list-tags');
+        const list = document.querySelector('.gym-list');
         const items = [...tags.children].filter(el => !el.classList.contains('gym-tag-measure'));
         return {rows:new Set(items.map(el => Math.round(el.getBoundingClientRect().top))).size,
           cardHeight:card.getBoundingClientRect().height,
-          listHeight:document.querySelector('.gym-list').getBoundingClientRect().height,
+          listHeight:list.getBoundingClientRect().height,
+          listScrollWidth:list.scrollWidth, listClientWidth:list.clientWidth,
           overflow:items.some(el => el.getBoundingClientRect().right > tags.getBoundingClientRect().right+1)};
       });
       assert.ok(metrics.rows<=2, JSON.stringify(metrics));
       assert.equal(metrics.overflow,false);
+      assert.equal(metrics.listScrollWidth,metrics.listClientWidth,JSON.stringify(metrics));
       assert.ok(metrics.cardHeight<180, JSON.stringify(metrics));
       assert.ok(metrics.listHeight/metrics.cardHeight>2, JSON.stringify(metrics));
       await card.locator('.gym-tags-toggle').click();
@@ -51,24 +54,27 @@ async function main() {
       const equipmentMetrics = await page.evaluate(() => {
         const search = document.querySelector('.equipment-search-row');
         const input = search.querySelector('input').getBoundingClientRect();
-        const sort = search.querySelector('[aria-label="器械排序"]').getBoundingClientRect();
-        const filters = [...document.querySelectorAll('.equipment-filter-fields select')];
+        const advanced = search.querySelector('.equipment-advanced > summary').getBoundingClientRect();
         const header = document.querySelector('.equipment-header').getBoundingClientRect();
-        return {inputWidth:input.width, sameSearchRow:Math.abs(input.top-sort.top)<2, headerHeight:header.height,
-          visibleFilters:filters.length, overflow:filters.some(el => el.getBoundingClientRect().right>innerWidth)};
+        return {inputWidth:input.width, sameSearchRow:Math.abs(input.top-advanced.top)<2, headerHeight:header.height};
       });
-      assert.ok(equipmentMetrics.inputWidth<=280, JSON.stringify(equipmentMetrics));
+      assert.ok(equipmentMetrics.inputWidth>=200, JSON.stringify(equipmentMetrics));
       assert.equal(equipmentMetrics.sameSearchRow,true);
-      assert.equal(equipmentMetrics.overflow,false);
-      assert.ok(equipmentMetrics.visibleFilters>=4);
       assert.ok(equipmentMetrics.headerHeight<85);
+      await page.locator('.equipment-advanced > summary').click();
+      await expect(page.getByLabel('器械排序')).toBeVisible();
+      const filters = await page.locator('.equipment-advanced-content .equipment-filter-fields select').evaluateAll(elements => ({
+        count:elements.length,
+        overflow:elements.some(el => el.getBoundingClientRect().right>innerWidth),
+      }));
+      assert.ok(filters.count>=4 && !filters.overflow, JSON.stringify(filters));
       await page.screenshot({path:path.join(out,`equipment-${width}.png`)});
       await page.getByRole('button',{name:'健身房地图',exact:true}).click();
       await card.hover();
       await expect(page.locator('.gym-preview')).toBeVisible();
       await page.mouse.move(width-10,10);
       await page.screenshot({path:path.join(out,`map-${width}.png`)});
-      checks.push(`${width}px: two tag rows, overflow details and brand navigation, compact search/filters, retained hover preview`);
+      checks.push(`${width}px: two tag rows, overflow details and brand navigation, search with expandable filters, retained hover preview`);
     }
     assert.deepEqual(errors,[]);
     const result = {passed:true,checks,temp};

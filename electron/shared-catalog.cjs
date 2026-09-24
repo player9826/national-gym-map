@@ -9,7 +9,7 @@ const reserved = value => ['__proto__', 'constructor', 'prototype'].includes(val
 const CLASSIFICATION = ['equipmentType', 'freeWeightType', 'part', 'parts', 'tags', 'loading'];
 // Only these public facts are ever exported or accepted from a publisher.
 const FIELDS = {
-  brands: ['id', 'name', 'website', 'logo'],
+  brands: ['id', 'name', 'website', 'logo', 'bannerImage', 'publicDescription'],
   gyms: ['id', 'name', 'country', 'province', 'city', 'district', 'address', 'lat', 'lng', 'brandIds', 'cover', 'photos', 'themeColor'],
   equipment: ['id', 'name', 'brandId', 'equipmentType', 'freeWeightType', 'part', 'parts', 'tags', 'loading', 'model', 'series', 'image', 'imageSource', 'productUrl', 'sourceType', 'sourceUrl', 'sourceDate', 'verificationStatus'],
   links: ['id', 'gymId', 'equipmentId', 'quantity'],
@@ -21,7 +21,7 @@ function publicCatalog(db) {
   return Object.fromEntries(Object.entries(FIELDS).map(([key, fields]) => [key, db[key].map(row => pick(row, fields))]));
 }
 function imageRefs(data) {
-  return [...new Set([...data.gyms.flatMap(r => [r.cover, ...(r.photos || [])]), ...data.equipment.map(r => r.image), ...data.brands.map(r => r.logo)].filter(Boolean))];
+  return [...new Set([...data.gyms.flatMap(r => [r.cover, ...(r.photos || [])]), ...data.equipment.map(r => r.image), ...data.brands.flatMap(r => [r.logo, r.bannerImage])].filter(Boolean))];
 }
 function checkCatalog(data) {
   if (!data || typeof data !== 'object') throw new Error('共享资料格式无效。');
@@ -54,7 +54,7 @@ function exportShared(store, { destination, includeImages = false }) {
   if (!includeImages) {
     for (const row of data.gyms) { delete row.cover; delete row.photos; }
     for (const row of data.equipment) delete row.image;
-    for (const row of data.brands) delete row.logo;
+    for (const row of data.brands) { delete row.logo; delete row.bannerImage; }
   }
   const buffers = imageRefs(data).map(ref => {
     const source = path.join(store.root, ref);
@@ -104,7 +104,7 @@ function createSharedCatalog(store, fetchBytes) {
         if (row.brandId) row.brandId = map('brands', row.brandId);
         if (row.brandIds) row.brandIds = row.brandIds.map(id => map('brands', id));
         if (key === 'links') { row.gymId = map('gyms', row.gymId); row.equipmentId = map('equipment', row.equipmentId); }
-        for (const field of ['image', 'cover', 'logo']) if (row[field]) row[field] = images[row[field]];
+        for (const field of ['image', 'cover', 'logo', 'bannerImage']) if (row[field]) row[field] = images[row[field]];
         if (row.photos) row.photos = row.photos.map(ref => images[ref]);
         let local = next[key].find(r => r.id === mappings[key][source.id]);
         if (!local && sourceId === store.db.metadata?.sharedPublisherId) local = next[key].find(r => r.id === source.id);

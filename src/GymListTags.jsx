@@ -37,7 +37,7 @@ export default function GymListTags({tags = [], brands = [], onBrand, onMore}) {
     return () => observer.disconnect();
   }, [signature]);
   const hidden = items.length - limit;
-  return <div className="gym-list-tags" ref={container}>
+  return <div className="gym-list-tags" ref={container} style={{overflow:'clip'}}>
     <div className="gym-tag-measure" ref={measure} aria-hidden="true">
       {items.map(item => <span key={item.key} className={item.brand ? 'gym-brand-tag' : 'gym-label-tag'}>{item.name}{item.brand && <ArrowUpRight size={12}/>}</span>)}
     </div>
